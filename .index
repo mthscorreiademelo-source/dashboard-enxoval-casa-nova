@@ -1,0 +1,1913 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Enxoval — Larissa & Matheus</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --cream: #F5F0E8;
+  --warm-white: #FDFAF4;
+  --sage: #7A9E7E;
+  --sage-light: #A8C5AC;
+  --sage-dark: #4E7553;
+  --terra: #C8714A;
+  --terra-light: #E8A080;
+  --gold: #C9A84C;
+  --charcoal: #2C2C2C;
+  --mid: #6B6B6B;
+  --light: #D8D0C4;
+  --card: #FFFFFF;
+  --shadow: 0 2px 20px rgba(44,44,44,0.08);
+  --shadow-h: 0 8px 40px rgba(44,44,44,0.16);
+  --r: 16px; --rs: 8px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--charcoal);min-height:100vh}
+
+/* SETUP SCREEN */
+#setup-screen{position:fixed;inset:0;background:var(--charcoal);z-index:9999;display:flex;align-items:center;justify-content:center}
+.setup-box{background:var(--warm-white);border-radius:var(--r);padding:48px;max-width:480px;width:90%;text-align:center}
+.setup-box h2{font-family:'Playfair Display',serif;font-size:1.8rem;margin-bottom:8px}
+.setup-box p{color:var(--mid);font-size:0.88rem;margin-bottom:28px;line-height:1.6}
+.setup-input{width:100%;padding:12px 16px;border:1.5px solid var(--light);border-radius:var(--rs);font-family:'DM Sans',sans-serif;font-size:0.9rem;margin-bottom:12px;outline:none;transition:border-color .2s}
+.setup-input:focus{border-color:var(--sage)}
+.setup-btn{width:100%;padding:14px;background:var(--charcoal);color:white;border:none;border-radius:var(--rs);font-family:'DM Sans',sans-serif;font-size:0.92rem;font-weight:600;cursor:pointer;transition:background .2s}
+.setup-btn:hover{background:var(--sage-dark)}
+.setup-error{color:#C62828;font-size:0.8rem;margin-top:8px;display:none}
+.setup-hint{font-size:0.75rem;color:var(--mid);margin-top:16px;line-height:1.5}
+
+/* LOADING */
+#loading-screen{position:fixed;inset:0;background:var(--cream);z-index:9998;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+.spinner{width:40px;height:40px;border:3px solid var(--light);border-top-color:var(--sage-dark);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loading-screen p{color:var(--mid);font-size:0.88rem}
+
+/* HEADER */
+header{background:var(--charcoal);padding:28px 48px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+header h1{font-family:'Playfair Display',serif;font-size:1.7rem;color:var(--cream);letter-spacing:.02em}
+header h1 span{color:var(--gold);font-style:italic}
+.header-right{display:flex;align-items:center;gap:16px}
+.header-meta{font-size:.75rem;color:var(--light);text-align:right;line-height:1.7}
+.btn-refresh{padding:8px 16px;background:transparent;border:1.5px solid rgba(255,255,255,.2);border-radius:100px;color:var(--light);font-family:'DM Sans',sans-serif;font-size:.75rem;cursor:pointer;transition:all .2s}
+.btn-refresh:hover{border-color:var(--gold);color:var(--gold)}
+.btn-logout{padding:8px 14px;background:transparent;border:1.5px solid rgba(255,255,255,.15);border-radius:100px;color:rgba(255,255,255,.4);font-family:'DM Sans',sans-serif;font-size:.72rem;cursor:pointer;transition:all .2s}
+.btn-logout:hover{border-color:var(--terra-light);color:var(--terra-light)}
+
+/* TABS */
+.tab-bar{background:var(--charcoal);padding:0 48px;border-top:1px solid rgba(255,255,255,.08);display:flex;gap:2px;overflow-x:auto}
+.tab-btn{padding:12px 18px;background:transparent;border:none;color:var(--light);font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all .2s;letter-spacing:.04em;text-transform:uppercase}
+.tab-btn.active,.tab-btn:hover{color:var(--gold);border-bottom-color:var(--gold)}
+
+/* MAIN */
+.main{padding:40px 48px;max-width:1400px;margin:0 auto}
+
+/* CAIXINHA HERO */
+.caixinha-hero{background:var(--charcoal);border-radius:var(--r);padding:36px 40px;margin-bottom:40px;display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:32px;align-items:center}
+.cx-block .cx-label{font-size:.7rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.45);margin-bottom:6px}
+.cx-block .cx-val{font-family:'Playfair Display',serif;font-size:2rem;font-weight:700;color:white;line-height:1}
+.cx-block .cx-sub{font-size:.75rem;color:rgba(255,255,255,.45);margin-top:5px}
+.cx-block .cx-val.good{color:#7EC89A}
+.cx-block .cx-val.warn{color:var(--gold)}
+.cx-progress{background:rgba(255,255,255,.1);border-radius:100px;height:10px;margin-top:16px;overflow:hidden}
+.cx-progress-fill{height:100%;background:linear-gradient(90deg,var(--sage) 0%,#7EC89A 100%);border-radius:100px;transition:width 1.2s ease}
+.cx-edit-btn{padding:12px 22px;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.15);border-radius:var(--rs);color:white;font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:500;cursor:pointer;transition:all .2s;white-space:nowrap}
+.cx-edit-btn:hover{background:rgba(255,255,255,.15);border-color:var(--gold)}
+
+/* EDIT CAIXINHA MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;display:none;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal-box{background:var(--card);border-radius:var(--r);padding:36px;width:420px;max-width:90vw}
+.modal-box h3{font-family:'Playfair Display',serif;font-size:1.2rem;margin-bottom:20px}
+.modal-close{float:right;background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--mid)}
+
+/* KPIs */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:40px}
+.kpi-card{background:var(--card);border-radius:var(--r);padding:24px;box-shadow:var(--shadow);border-left:4px solid var(--sage);transition:transform .2s,box-shadow .2s}
+.kpi-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-h)}
+.kpi-card.t{border-left-color:var(--terra)}
+.kpi-card.g{border-left-color:var(--gold)}
+.kpi-card.d{border-left-color:var(--charcoal)}
+.kpi-card.gift{border-left-color:#9B7EBD}
+.kpi-label{font-size:.72rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--mid);margin-bottom:8px}
+.kpi-value{font-family:'Playfair Display',serif;font-size:1.9rem;font-weight:700;color:var(--charcoal);line-height:1}
+.kpi-sub{font-size:.75rem;color:var(--mid);margin-top:6px}
+
+/* PROGRESS */
+.progress-section{background:var(--card);border-radius:var(--r);padding:28px 32px;box-shadow:var(--shadow);margin-bottom:40px}
+.progress-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:16px}
+.progress-title{font-family:'Playfair Display',serif;font-size:1.1rem}
+.progress-pct{font-size:1.4rem;font-weight:700;color:var(--sage-dark)}
+.progress-bar-bg{height:12px;background:var(--cream);border-radius:100px;overflow:hidden;margin-bottom:8px;border:1px solid var(--light)}
+.progress-bar-fill{height:100%;background:linear-gradient(90deg,var(--sage),var(--sage-dark));border-radius:100px;transition:width 1s ease}
+.progress-legend{display:flex;gap:24px;font-size:.75rem;color:var(--mid)}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+
+/* SECTION */
+.section-title{font-family:'Playfair Display',serif;font-size:1.25rem;color:var(--charcoal);margin-bottom:20px;padding-bottom:10px;border-bottom:2px solid var(--light);display:flex;align-items:center;gap:12px}
+.badge-count{font-family:'DM Sans',sans-serif;font-size:.7rem;background:var(--sage);color:white;padding:3px 10px;border-radius:100px;font-weight:600;letter-spacing:.05em}
+
+/* CHARTS ROW */
+.charts-row{display:grid;grid-template-columns:1fr 1.6fr;gap:24px;margin-bottom:40px}
+.chart-card{background:var(--card);border-radius:var(--r);padding:28px;box-shadow:var(--shadow)}
+.chart-card h3{font-family:'Playfair Display',serif;font-size:1rem;margin-bottom:20px}
+
+/* MINI STATS */
+.mini-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:40px}
+.mini-stat{background:var(--card);border-radius:var(--rs);padding:16px 20px;box-shadow:var(--shadow);text-align:center}
+.mini-stat .val{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700}
+.mini-stat .lbl{font-size:.7rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--mid);margin-top:4px}
+
+/* PRIORITY COLS */
+.priority-cols{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:40px}
+.prio-col{background:var(--card);border-radius:var(--r);padding:18px;box-shadow:var(--shadow)}
+.prio-col h4{font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid var(--cream)}
+.p1-col h4{color:#C62828;border-color:#FDECEA}
+.p2-col h4{color:#E65100;border-color:#FFF3E0}
+.p3-col h4{color:#827717;border-color:#FFF9C4}
+.p4-col h4{color:#2E7D32;border-color:#E8F5E9}
+.p5-col h4{color:#3949AB;border-color:#E8EAF6}
+.prio-item{font-size:.77rem;padding:7px 10px;border-radius:6px;margin-bottom:6px;background:var(--cream);line-height:1.4;display:flex;align-items:flex-start;gap:6px}
+.prio-item.done{opacity:.4;text-decoration:line-through}
+.prio-item.gift-item{background:#F3EFF8}
+
+/* TABLE */
+.table-section{margin-bottom:40px}
+.filters-row{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+.filter-btn{padding:7px 15px;border:1.5px solid var(--light);border-radius:100px;background:transparent;font-family:'DM Sans',sans-serif;font-size:.77rem;font-weight:500;cursor:pointer;transition:all .2s;color:var(--mid)}
+.filter-btn.active,.filter-btn:hover{background:var(--charcoal);border-color:var(--charcoal);color:white}
+.search-input{margin-left:auto;padding:8px 16px;border:1.5px solid var(--light);border-radius:100px;font-family:'DM Sans',sans-serif;font-size:.82rem;outline:none;background:var(--card);color:var(--charcoal);width:220px;transition:border-color .2s}
+.search-input:focus{border-color:var(--sage)}
+table{width:100%;border-collapse:collapse}
+thead tr{background:var(--charcoal)}
+thead th{padding:12px 14px;text-align:left;font-size:.7rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--light);white-space:nowrap;cursor:pointer}
+thead th:hover{color:var(--gold)}
+tbody tr{border-bottom:1px solid var(--light);transition:background .15s}
+tbody tr:hover{background:var(--cream)}
+tbody tr.bought-row{background:#f0f7f1}
+tbody tr.gift-row{background:#F8F4FC}
+tbody td{padding:11px 14px;font-size:.83rem;vertical-align:middle}
+.item-name{font-weight:500}
+.item-link{color:var(--sage-dark);text-decoration:none;font-weight:500}
+.item-link:hover{text-decoration:underline}
+.img-wrap{position:relative;display:inline-block}
+.img-wrap .float-img{display:none;position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);width:180px;height:180px;object-fit:cover;border-radius:12px;border:2px solid white;box-shadow:0 8px 32px rgba(0,0,0,.18);z-index:999;background:var(--light)}
+.img-wrap:hover .float-img{display:block}
+
+.need-badge{display:inline-block;padding:3px 10px;border-radius:100px;font-size:.68rem;font-weight:600;letter-spacing:.04em}
+.n-n{background:#E8F4EC;color:#3A7A4A}
+.n-u{background:#FFF3E0;color:#B06020}
+.n-s{background:#F0F0F0;color:#666}
+.prio-badge{display:inline-block;width:26px;height:26px;border-radius:50%;text-align:center;line-height:26px;font-size:.7rem;font-weight:700}
+.pb-1{background:#FDECEA;color:#C62828}
+.pb-2{background:#FFF3E0;color:#E65100}
+.pb-3{background:#FFF9C4;color:#827717}
+.pb-4{background:#E8F5E9;color:#2E7D32}
+.pb-5{background:#E8EAF6;color:#3949AB}
+.gift-badge{display:inline-block;padding:3px 9px;border-radius:100px;font-size:.68rem;font-weight:600;background:#F3EFF8;color:#6B3FA0}
+.check-ok{color:var(--sage-dark);font-size:1.1rem}
+.check-no{color:var(--light);font-size:1.1rem}
+.price-best{color:var(--sage-dark);font-weight:700}
+.price-date{font-size:.7rem;color:var(--mid)}
+
+/* PRICE SECTION */
+.price-grid{display:grid;grid-template-columns:1fr 1.5fr;gap:24px}
+.price-form-card,.price-hist-card{background:var(--card);border-radius:var(--r);padding:28px;box-shadow:var(--shadow)}
+.price-form-card h3,.price-hist-card h3{font-family:'Playfair Display',serif;font-size:1rem;margin-bottom:20px}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:.73rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--mid);margin-bottom:5px}
+.form-group select,.form-group input{width:100%;padding:10px 13px;border:1.5px solid var(--light);border-radius:var(--rs);font-family:'DM Sans',sans-serif;font-size:.84rem;color:var(--charcoal);background:var(--warm-white);outline:none;transition:border-color .2s}
+.form-group select:focus,.form-group input:focus{border-color:var(--sage)}
+.btn-primary{width:100%;padding:12px;background:var(--sage-dark);color:white;border:none;border-radius:var(--rs);font-family:'DM Sans',sans-serif;font-size:.88rem;font-weight:600;cursor:pointer;transition:background .2s}
+.btn-primary:hover{background:var(--sage)}
+.price-log{margin-top:16px;max-height:200px;overflow-y:auto}
+.plog-item{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--cream);font-size:.8rem}
+.plog-item:last-child{border:none}
+.plog-meta{color:var(--mid);font-size:.72rem;margin-top:2px}
+.plog-link{color:var(--sage-dark);text-decoration:none;font-size:.72rem}
+.plog-link:hover{text-decoration:underline}
+.plog-val{font-weight:700;color:var(--sage-dark);font-size:.9rem}
+.no-records{color:var(--mid);font-size:.82rem;padding:12px 0;text-align:center}
+
+/* OVERVIEW DETAIL PANEL */
+.detail-panel{display:none;background:var(--warm-white);border:1px solid var(--light);border-radius:var(--r);padding:20px;margin-top:16px;animation:fadeIn .3s ease}
+.detail-panel.open{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* TABS */
+.tab-content{display:none}
+.tab-content.active{display:block}
+
+/* RESPONSIVE */
+@media(max-width:960px){
+  header,.tab-bar,.main{padding-left:20px;padding-right:20px}
+  .charts-row,.price-grid{grid-template-columns:1fr}
+  .priority-cols{grid-template-columns:repeat(2,1fr)}
+  .caixinha-hero{grid-template-columns:1fr 1fr;gap:20px}
+}
+@media(max-width:600px){
+  .caixinha-hero{grid-template-columns:1fr}
+  header{flex-direction:column;gap:12px;align-items:flex-start}
+}
+
+/* PLOG ACTIONS */
+.plog-active {
+  background: #FFF8F0 !important;
+  border-left: 3px solid var(--terra) !important;
+  padding-left: 10px !important;
+  border-radius: 6px;
+}
+.plog-store-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 0 5px;
+  border-top: 1px solid var(--light);
+  margin-top: 6px;
+  font-size: .78rem;
+}
+.plog-store-header:first-child { border-top: none; margin-top: 0; }
+.plog-store-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.plog-store-best {
+  margin-left: auto;
+  font-size: .72rem;
+  color: var(--mid);
+  font-weight: 400;
+}
+.tag-min {
+  font-size:.68rem;background:#E8F4EC;color:#3A7A4A;
+  padding:2px 7px;border-radius:100px;font-weight:600;
+  margin-left:4px;
+}
+.tag-sel {
+  font-size:.68rem;background:#FFF0E6;color:#C8714A;
+  padding:2px 7px;border-radius:100px;font-weight:600;
+  margin-left:4px;
+}
+.plog-item { position: relative; }
+.plog-actions { display: flex; gap: 6px; margin-top: 6px; }
+.plog-action-btn {
+  padding: 3px 10px;
+  border-radius: 100px;
+  border: 1.5px solid var(--light);
+  background: transparent;
+  font-family: 'DM Sans', sans-serif;
+  font-size: .68rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s;
+  color: var(--mid);
+}
+.plog-action-btn.edit:hover  { border-color: var(--gold); color: var(--gold); background: #FFFBF0; }
+.plog-action-btn.del:hover   { border-color: #C62828;    color: #C62828;    background: #FFF5F5; }
+
+/* EDIT PRICE MODAL */
+#edit-price-modal .modal-box { max-width: 400px; }
+.edit-modal-fields { display: flex; flex-direction: column; gap: 12px; margin: 18px 0; }
+.edit-modal-fields label { font-size: .72rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--mid); margin-bottom: 3px; display: block; }
+.edit-modal-fields input { width: 100%; padding: 9px 13px; border: 1.5px solid var(--light); border-radius: var(--rs); font-family: 'DM Sans',sans-serif; font-size: .85rem; color: var(--charcoal); background: var(--warm-white); outline: none; transition: border-color .2s; }
+.edit-modal-fields input:focus { border-color: var(--sage); }
+.edit-modal-actions { display: flex; gap: 10px; margin-top: 4px; }
+.btn-save-edit  { flex:1; padding:11px; background:var(--sage-dark); color:white; border:none; border-radius:var(--rs); font-family:'DM Sans',sans-serif; font-size:.86rem; font-weight:600; cursor:pointer; transition:background .2s; }
+.btn-save-edit:hover { background: var(--sage); }
+.btn-cancel-edit { flex:1; padding:11px; background:transparent; color:var(--mid); border:1.5px solid var(--light); border-radius:var(--rs); font-family:'DM Sans',sans-serif; font-size:.86rem; font-weight:500; cursor:pointer; transition:all .2s; }
+.btn-cancel-edit:hover { border-color:var(--charcoal); color:var(--charcoal); }
+
+/* PERIOD SELECTOR */
+.period-selector {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.period-btn {
+  padding: 5px 13px;
+  border: 1.5px solid var(--light);
+  border-radius: 100px;
+  background: transparent;
+  font-family: 'DM Sans', sans-serif;
+  font-size: .73rem;
+  font-weight: 500;
+  cursor: pointer;
+  color: var(--mid);
+  transition: all .18s;
+}
+.period-btn.active, .period-btn:hover {
+  background: var(--charcoal);
+  border-color: var(--charcoal);
+  color: white;
+}
+
+/* ── ITEM DETAIL MODAL ───────────────────── */
+#item-detail-modal .modal-box {
+  max-width: 680px;
+  width: 94vw;
+  max-height: 88vh;
+  overflow-y: auto;
+  padding: 32px;
+}
+.item-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  gap: 16px;
+}
+.item-detail-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.3rem;
+  line-height: 1.3;
+  color: var(--charcoal);
+}
+.item-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 24px;
+  margin-bottom: 20px;
+}
+.item-detail-field { display: flex; flex-direction: column; gap: 3px; }
+.item-detail-field label {
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--mid);
+}
+.item-detail-field .field-val {
+  font-size: .9rem;
+  color: var(--charcoal);
+  font-weight: 500;
+}
+.item-detail-chart {
+  border-top: 1px solid var(--light);
+  padding-top: 16px;
+  margin-top: 8px;
+}
+.item-detail-chart h4 {
+  font-family: 'Playfair Display', serif;
+  font-size: .95rem;
+  margin-bottom: 12px;
+}
+.price-summary-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.price-summary-chip {
+  padding: 6px 14px;
+  border-radius: 100px;
+  font-size: .78rem;
+  font-weight: 600;
+}
+.chip-current { background: #FFF3E0; color: #E65100; }
+.chip-best    { background: #E8F4EC; color: #2E7A4A; }
+
+/* ── EDIT ITEM MODAL ─────────────────────── */
+#edit-item-modal .modal-box {
+  max-width: 560px;
+  width: 94vw;
+  max-height: 88vh;
+  overflow-y: auto;
+}
+.edit-item-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 16px;
+  margin: 16px 0;
+}
+.edit-item-grid .span2 { grid-column: span 2; }
+.edit-item-actions { display: flex; gap: 10px; margin-top: 8px; }
+
+/* ── INTERACTIVE CHECKBOX ───────────────── */
+.cb-toggle {
+  cursor: pointer;
+  font-size: 1.1rem;
+  user-select: none;
+  transition: transform .15s;
+  display: inline-block;
+}
+.cb-toggle:hover { transform: scale(1.25); }
+.cb-toggle.saving { opacity: .4; pointer-events: none; }
+
+/* ── CLICKABLE TABLE ROW ────────────────── */
+.item-row-name {
+  cursor: pointer;
+  color: var(--sage-dark);
+  font-weight: 500;
+  text-decoration: none;
+  border-bottom: 1px dashed var(--sage-light);
+  transition: color .15s;
+}
+.item-row-name:hover { color: var(--sage); }
+</style>
+</head>
+<body>
+
+<!-- SETUP -->
+<div id="setup-screen">
+  <div class="setup-box">
+    <div style="font-size:2.5rem;margin-bottom:12px">🏡</div>
+    <h2>Enxoval<br><em style="font-weight:400;color:var(--mid)">Larissa & Matheus</em></h2>
+    <p>Para carregar os dados da sua planilha, insira a URL do Apps Script e a chave de acesso.</p>
+    <input class="setup-input" id="setup-url" placeholder="URL do Apps Script (https://script.google.com/...)" type="url">
+    <input class="setup-input" id="setup-key" placeholder="Chave de acesso (API Key)" type="password">
+    <button class="setup-btn" onclick="saveConfig()">Entrar no Dashboard</button>
+    <div class="setup-error" id="setup-error">URL ou chave inválida. Verifique e tente novamente.</div>
+    <div class="setup-hint">Estas informações ficam salvas apenas no seu navegador.<br>Ninguém mais que acesse este link verá seus dados.</div>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div id="loading-screen">
+  <div class="spinner"></div>
+  <p id="loading-msg">Carregando dados da planilha...</p>
+</div>
+
+
+<!-- ITEM DETAIL MODAL -->
+<div class="modal-overlay" id="item-detail-modal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeItemDetail()">✕</button>
+    <div id="item-detail-body"></div>
+  </div>
+</div>
+
+<!-- EDIT ITEM MODAL -->
+<div class="modal-overlay" id="edit-item-modal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeEditItem()">✕</button>
+    <h3 id="edit-item-title" style="font-family:'Playfair Display',serif;font-size:1.1rem;margin-bottom:4px"></h3>
+    <div style="font-size:.75rem;color:var(--mid);margin-bottom:4px" id="edit-item-room-label"></div>
+    <div class="edit-item-grid">
+      <div class="form-group span2"><label>Item (nome)</label><input id="ei-item" type="text"></div>
+      <div class="form-group"><label>Necessidade</label>
+        <select id="ei-necessidade">
+          <option value="">—</option>
+          <option value="Necessário">Necessário</option>
+          <option value="Útil">Útil</option>
+          <option value="Supérfluo">Supérfluo</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Quantidade</label><input id="ei-qtd" type="number" min="1"></div>
+      <div class="form-group span2"><label>Modelo Escolhido</label><input id="ei-modelo" type="text" placeholder="Nome do modelo…"></div>
+      <div class="form-group"><label>Prioridade</label>
+        <select id="ei-prioridade">
+          <option value="">—</option>
+          <option value="P1">P1</option>
+          <option value="P2">P2</option>
+          <option value="P3">P3</option>
+          <option value="P4">P4</option>
+          <option value="P5">P5</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Valor Estimado (R$)</label><input id="ei-estimado" type="number" step="0.01"></div>
+      <div class="form-group"><label>Valor Pago (R$)</label><input id="ei-pago" type="number" step="0.01"></div>
+      <div class="form-group"><label>Presente</label>
+        <select id="ei-presente">
+          <option value="">Não</option>
+          <option value="Recebido">Recebido</option>
+          <option value="Prometido">Prometido</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Comprado</label>
+        <select id="ei-bought">
+          <option value="false">Não</option>
+          <option value="true">Sim</option>
+        </select>
+      </div>
+    </div>
+    <div id="edit-item-status" style="font-size:.78rem;min-height:18px;margin-bottom:10px"></div>
+    <div class="edit-item-actions">
+      <button class="btn-cancel-edit" onclick="closeEditItem()">Cancelar</button>
+      <button class="btn-save-edit" onclick="saveEditItem()">Salvar na Planilha</button>
+    </div>
+  </div>
+</div>
+<!-- EDIT PRICE MODAL -->
+<div class="modal-overlay" id="edit-price-modal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeEditModal()">✕</button>
+    <h3>✏️ Editar Registro de Preço</h3>
+    <div class="edit-modal-fields">
+      <div><label>Valor (R$)</label><input type="number" id="edit-val" step="0.01"></div>
+      <div><label>Loja / Fonte</label><input type="text" id="edit-loja" placeholder="Ex: Americanas…"></div>
+      <div><label>Link (opcional)</label><input type="url" id="edit-link" placeholder="https://…"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div><label>Data</label><input type="date" id="edit-date"></div>
+        <div><label>Hora (opcional)</label><input type="time" id="edit-time"></div>
+      </div>
+    </div>
+    <div id="edit-modal-status" style="font-size:.78rem;margin-bottom:10px;min-height:18px"></div>
+    <div class="edit-modal-actions">
+      <button class="btn-cancel-edit" onclick="closeEditModal()">Cancelar</button>
+      <button class="btn-save-edit" onclick="saveEditPrice()">Salvar Alteração</button>
+    </div>
+  </div>
+</div>
+
+<!-- CAIXINHA MODAL -->
+<div class="modal-overlay" id="cx-modal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <h3>💰 Atualizar Caixinha</h3>
+    <div class="form-group" style="margin-top:16px">
+      <label>Reservado em Caixa (R$)</label>
+      <input type="number" id="cx-reservado" step="0.01" placeholder="0,00">
+    </div>
+    <div class="form-group">
+      <label>Meta Mensal (R$)</label>
+      <input type="number" id="cx-meta-mensal" step="0.01" placeholder="0,00">
+    </div>
+    <button class="btn-primary" style="margin-top:8px" onclick="saveCaixinha()">Salvar na Planilha</button>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header id="app-header" style="display:none">
+  <h1>🏡 Enxoval — <span>Larissa & Matheus</span></h1>
+  <div class="header-right">
+    <div class="header-meta">
+      <div>Atualizado: <span id="last-updated">—</span></div>
+      <div id="header-caixa" style="color:var(--sage-light)"></div>
+    </div>
+    <button class="btn-refresh" onclick="loadAllData()">↻ Atualizar</button>
+    <button class="btn-logout" onclick="logout()">Sair</button>
+  </div>
+</header>
+
+<div class="tab-bar" id="tab-bar" style="display:none">
+  <button class="tab-btn active" data-room="overview" onclick="switchTab('overview',this)">📊 Visão Geral</button>
+  <button class="tab-btn" data-room="cozinha" onclick="switchTab('cozinha',this)">🍳 Cozinha</button>
+  <button class="tab-btn" data-room="sala" onclick="switchTab('sala',this)">🛋️ Sala</button>
+  <button class="tab-btn" data-room="banheiro" onclick="switchTab('banheiro',this)">🚿 Banheiro</button>
+  <button class="tab-btn" data-room="quarto" onclick="switchTab('quarto',this)">🛏️ Quarto</button>
+  <button class="tab-btn" data-room="escritorio" onclick="switchTab('escritorio',this)">💻 Escritório</button>
+  <button class="tab-btn" data-room="area_servico" onclick="switchTab('area_servico',this)">🧺 Área de Serviço</button>
+  <button class="tab-btn" data-room="ferramentas" onclick="switchTab('ferramentas',this)">🔧 Ferramentas</button>
+  <button class="tab-btn" data-room="outros" onclick="switchTab('outros',this)">📦 Outros</button>
+</div>
+
+<div class="main" id="app-main" style="display:none">
+
+  <!-- VISÃO GERAL -->
+  <div id="tab-overview" class="tab-content active">
+    <div class="caixinha-hero" id="cx-hero">
+      <div class="cx-block">
+        <div class="cx-label">💰 Em Caixa</div>
+        <div class="cx-val good" id="cx-val-reservado">R$ 0</div>
+        <div class="cx-sub" id="cx-sub-meses"></div>
+      </div>
+      <div class="cx-block">
+        <div class="cx-label">🛒 Total Gasto</div>
+        <div class="cx-val" id="cx-val-gasto">R$ 0</div>
+        <div class="cx-sub">em compras realizadas</div>
+      </div>
+      <div class="cx-block">
+        <div class="cx-label">🎯 Objetivo Total</div>
+        <div class="cx-val warn" id="cx-val-objetivo">R$ 0</div>
+        <div class="cx-sub" id="cx-sub-falta"></div>
+        <div class="cx-progress"><div class="cx-progress-fill" id="cx-bar" style="width:0%"></div></div>
+      </div>
+      <button class="cx-edit-btn" onclick="openModal()">✏️ Atualizar Caixinha</button>
+    </div>
+
+    <div class="kpi-grid" id="kpi-overview"></div>
+
+    <div class="progress-section">
+      <div class="progress-header">
+        <span class="progress-title">Progresso Geral de Compras</span>
+        <span class="progress-pct" id="pct-overview">0%</span>
+      </div>
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="bar-overview" style="width:0%"></div></div>
+      <div class="progress-legend">
+        <span><span class="dot" style="background:var(--sage)"></span> Comprados</span>
+        <span><span class="dot" style="background:#9B7EBD"></span> Presentes</span>
+        <span><span class="dot" style="background:var(--light)"></span> Pendentes</span>
+      </div>
+    </div>
+
+    <div class="charts-row">
+      <div class="chart-card">
+        <h3>Valor Estimado por Cômodo</h3>
+        <canvas id="chart-pie-overview" style="max-height:280px"></canvas>
+        <div class="detail-panel" id="pie-detail"></div>
+      </div>
+      <div class="chart-card">
+        <h3>Itens por Cômodo — Status</h3>
+        <canvas id="chart-bar-overview" style="max-height:280px"></canvas>
+      </div>
+    </div>
+
+    <div class="charts-row">
+      <div class="chart-card">
+        <h3>Distribuição por Necessidade (todos os cômodos)</h3>
+        <canvas id="chart-need-overview" style="max-height:260px"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>Top Itens — Maiores Estimativas</h3>
+        <canvas id="chart-top-items" style="max-height:260px"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROOM TABS (generated dynamically) -->
+  <div id="tab-cozinha" class="tab-content"></div>
+  <div id="tab-sala" class="tab-content"></div>
+  <div id="tab-banheiro" class="tab-content"></div>
+  <div id="tab-quarto" class="tab-content"></div>
+  <div id="tab-escritorio" class="tab-content"></div>
+  <div id="tab-area_servico" class="tab-content"></div>
+  <div id="tab-ferramentas" class="tab-content"></div>
+  <div id="tab-outros" class="tab-content"></div>
+
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════
+   CONFIG & STATE
+═══════════════════════════════════════════════ */
+let API_URL = '';
+let API_KEY = '';
+let STATE = { config: {}, rooms: {}, loaded: new Set() };
+let chartInstances = {};
+let activeRoom = 'overview';
+let tableFilter = 'all';
+let tableSearch = '';
+
+const ROOM_KEYS = ['cozinha','sala','banheiro','quarto','escritorio','area_servico','ferramentas','outros'];
+const ROOM_META = {
+  overview:     { label:'Visão Geral',        icon:'📊' },
+  cozinha:      { label:'Cozinha',             icon:'🍳' },
+  sala:         { label:'Sala',                icon:'🛋️' },
+  banheiro:     { label:'Banheiro',            icon:'🚿' },
+  quarto:       { label:'Quarto',              icon:'🛏️' },
+  escritorio:   { label:'Escritório',          icon:'💻' },
+  area_servico: { label:'Área de Serviço',     icon:'🧺' },
+  ferramentas:  { label:'Ferramentas',         icon:'🔧' },
+  outros:       { label:'Outros',              icon:'📦' },
+};
+
+/* ═══════════════════════════════════════════════
+   SETUP & AUTH
+═══════════════════════════════════════════════ */
+function init() {
+  const url = localStorage.getItem('enx_url');
+  const key = localStorage.getItem('enx_key');
+  if (url && key) {
+    API_URL = url;
+    API_KEY = key;
+    document.getElementById('setup-screen').style.display = 'none';
+    showApp();
+    loadAllData();
+  }
+}
+
+function saveConfig() {
+  const url = document.getElementById('setup-url').value.trim();
+  const key = document.getElementById('setup-key').value.trim();
+  if (!url || !key) {
+    document.getElementById('setup-error').style.display = 'block';
+    document.getElementById('setup-error').textContent = 'Preencha a URL e a chave de acesso.';
+    return;
+  }
+  API_URL = url;
+  API_KEY = key;
+  localStorage.setItem('enx_url', url);
+  localStorage.setItem('enx_key', key);
+  document.getElementById('setup-screen').style.display = 'none';
+  showApp();
+  loadAllData();
+}
+
+function logout() {
+  localStorage.removeItem('enx_url');
+  localStorage.removeItem('enx_key');
+  location.reload();
+}
+
+function showApp() {
+  document.getElementById('app-header').style.display = 'flex';
+  document.getElementById('tab-bar').style.display = 'flex';
+  document.getElementById('app-main').style.display = 'block';
+}
+
+/* ═══════════════════════════════════════════════
+   API CALLS
+═══════════════════════════════════════════════ */
+async function apiFetch(params) {
+  const url = new URL(API_URL);
+  url.searchParams.set('key', API_KEY);
+  for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
+  const res = await fetch(url.toString());
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+async function apiPost(body) {
+  // Usa GET em vez de POST para evitar erro de CORS com GitHub Pages
+  // O Apps Script trata todas as escritas via action=write_* no doGet
+  return apiFetch(body);
+}
+
+async function loadAllData() {
+  setLoading(true, 'Carregando dados da planilha...');
+  try {
+    const data = await apiFetch({ action: 'all' });
+    if (data.error) throw new Error(data.error);
+    STATE.config = data.config || {};
+    STATE.rooms = data.rooms || {};
+    STATE.loaded = new Set(Object.keys(STATE.rooms));
+    document.getElementById('last-updated').textContent = new Date().toLocaleString('pt-BR');
+    renderOverview();
+    if (activeRoom !== 'overview') renderRoom(activeRoom);
+  } catch(e) {
+    alert('Erro ao carregar dados: ' + e.message + '\nVerifique a URL e a chave de acesso.');
+  }
+  setLoading(false);
+}
+
+function setLoading(on, msg='') {
+  const el = document.getElementById('loading-screen');
+  el.style.display = on ? 'flex' : 'none';
+  if (msg) document.getElementById('loading-msg').textContent = msg;
+}
+
+/* ═══════════════════════════════════════════════
+   UTILITIES
+═══════════════════════════════════════════════ */
+const fmtBRL = v => v != null ? `R$ ${v.toFixed(2).replace('.',',')}` : '—';
+const parseNum = v => {
+  if (v == null) return null;
+  const s = String(v).trim();
+  if (!s || s === '—' || s === '-' || s.includes('---')) return null;
+  if (typeof v === 'number') return isNaN(v) ? null : v;
+  const n = parseFloat(s.replace(/R\$\s*/g,'').replace(/\./g,'').replace(',','.'));
+  return isNaN(n) ? null : n;
+};
+const fmtK   = v => v == null ? '—' : v >= 1000 ? `R$ ${(v/1000).toFixed(1).replace('.',',')}k` : fmtBRL(v);
+
+function allItems() {
+  return Object.values(STATE.rooms).flatMap(r => r.items || []);
+}
+
+function roomItems(key) {
+  return (STATE.rooms[key]?.items || []).filter(i => i.item);
+}
+
+function itemCost(i) {
+  if (i.presente === 'Recebido' || i.presente === 'Prometido') return 0;
+  const pago = parseNum(i.pago);
+  const est  = parseNum(i.estimado);
+  return pago ?? est ?? 0;
+}
+
+function bestPrice(i) {
+  if (!i.historico || !i.historico.length) return null;
+  return i.historico.reduce((min, r) => r.valor < min.valor ? r : min, i.historico[0]);
+}
+
+function destroyChart(id) {
+  if (chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id]; }
+}
+
+/* ═══════════════════════════════════════════════
+   OVERVIEW
+═══════════════════════════════════════════════ */
+function renderOverview() {
+  const cfg = STATE.config;
+  const items = allItems();
+
+  // Caixinha
+  const reservado = cfg.reservado || 0;
+  const metaMensal = cfg.metaMensal || 0;
+  const totalGasto = items.filter(i => i.pago).reduce((s,i) => s + (i.pago||0), 0);
+
+  // Objetivo = sum of effective cost per item
+  const objetivo = items.reduce((s,i) => s + itemCost(i), 0);
+  const falta = Math.max(0, objetivo - reservado - totalGasto);
+  const pctCx = objetivo > 0 ? Math.min(100, Math.round((reservado + totalGasto) / objetivo * 100)) : 0;
+  const mesesFalta = metaMensal > 0 ? Math.ceil(falta / metaMensal) : null;
+
+  document.getElementById('cx-val-reservado').textContent = fmtBRL(reservado);
+  document.getElementById('cx-val-gasto').textContent = fmtBRL(totalGasto);
+  document.getElementById('cx-val-objetivo').textContent = fmtK(objetivo);
+  document.getElementById('cx-sub-falta').textContent = `Faltam ${fmtBRL(falta)}`;
+  document.getElementById('cx-sub-meses').textContent = metaMensal > 0 ? `Meta: ${fmtBRL(metaMensal)}/mês` : 'Meta mensal não definida';
+  document.getElementById('header-caixa').textContent = `Caixa: ${fmtBRL(reservado)}`;
+  setTimeout(() => { document.getElementById('cx-bar').style.width = pctCx + '%'; }, 100);
+
+  // KPIs
+  const total = items.length;
+  const bought = items.filter(i => i.bought).length;
+  const giftCount = items.filter(i => i.presente).length;
+  const pctItems = total > 0 ? Math.round(bought / total * 100) : 0;
+
+  document.getElementById('kpi-overview').innerHTML = `
+    <div class="kpi-card t"><div class="kpi-label">Total Investido</div><div class="kpi-value">${fmtK(totalGasto)}</div><div class="kpi-sub">${bought} itens comprados</div></div>
+    <div class="kpi-card"><div class="kpi-label">Estimado Restante</div><div class="kpi-value">${fmtK(falta)}</div><div class="kpi-sub">para completar o enxoval</div></div>
+    <div class="kpi-card g"><div class="kpi-label">Objetivo Total</div><div class="kpi-value">${fmtK(objetivo)}</div><div class="kpi-sub">calculado de todos os itens</div></div>
+    <div class="kpi-card d"><div class="kpi-label">Progresso</div><div class="kpi-value">${pctItems}%</div><div class="kpi-sub">${bought} de ${total} itens</div></div>
+    <div class="kpi-card gift"><div class="kpi-label">🎁 Presentes</div><div class="kpi-value">${giftCount}</div><div class="kpi-sub">itens recebidos/prometidos</div></div>
+    ${mesesFalta ? `<div class="kpi-card"><div class="kpi-label">⏱ Estimativa</div><div class="kpi-value">${mesesFalta}</div><div class="kpi-sub">meses para atingir objetivo</div></div>` : ''}
+  `;
+
+  // Progress bar
+  document.getElementById('pct-overview').textContent = pctItems + '%';
+  setTimeout(() => { document.getElementById('bar-overview').style.width = pctItems + '%'; }, 150);
+
+  // Charts
+  renderOverviewCharts(items);
+}
+
+function renderOverviewCharts(items) {
+  const roomOrder = ROOM_KEYS;
+  const roomLabels = roomOrder.map(k => ROOM_META[k]?.label || k);
+  const roomEst    = roomOrder.map(k => roomItems(k).reduce((s,i) => s + itemCost(i), 0));
+  const roomBought = roomOrder.map(k => roomItems(k).filter(i=>i.bought).length);
+  const roomPend   = roomOrder.map(k => roomItems(k).filter(i=>!i.bought && !i.presente).length);
+  const roomGift   = roomOrder.map(k => roomItems(k).filter(i=>i.presente).length);
+
+  const PIE_COLORS = ['#7A9E7E','#C8714A','#C9A84C','#6B9CB8','#9B7EBD','#E08080','#5B8A8A','#D4A96A'];
+
+  // Pie — show all rooms; if all zero, show item counts instead
+  const hasEst = roomEst.some(v => v > 0);
+  const pieData = hasEst ? roomEst : roomOrder.map(k => roomItems(k).length);
+  const pieLabel = hasEst ? 'estimado' : 'itens';
+  destroyChart('pie-ov');
+  chartInstances['pie-ov'] = new Chart(document.getElementById('chart-pie-overview'), {
+    type: 'pie',
+    data: { labels: roomLabels, datasets: [{ data: pieData, backgroundColor: PIE_COLORS, borderWidth: 2, borderColor:'#fff' }] },
+    options: {
+      responsive:true,
+      plugins: {
+        legend:{ position:'bottom', labels:{ font:{family:'DM Sans'}, boxWidth:12 } },
+        tooltip:{ callbacks:{ label: ctx => hasEst ? ` ${ctx.label}: ${fmtBRL(ctx.parsed)}` : ` ${ctx.label}: ${ctx.parsed} ${pieLabel}` } }
+      },
+      onClick: (e, el) => {
+        if (!el.length) return;
+        const k = roomOrder[el[0].index];
+        showPieDetail(k);
+      }
+    }
+  });
+
+  // Bar
+  destroyChart('bar-ov');
+  chartInstances['bar-ov'] = new Chart(document.getElementById('chart-bar-overview'), {
+    type: 'bar',
+    data: {
+      labels: roomLabels,
+      datasets: [
+        { label:'Comprados', data:roomBought, backgroundColor:'#7A9E7E' },
+        { label:'Presentes', data:roomGift,   backgroundColor:'#C9A84C' },
+        { label:'Pendentes', data:roomPend,   backgroundColor:'#D8D0C4' }
+      ]
+    },
+    options: { responsive:true, scales:{ x:{stacked:true}, y:{stacked:true,beginAtZero:true} }, plugins:{ legend:{ position:'bottom', labels:{font:{family:'DM Sans'},boxWidth:12} } } }
+  });
+
+  // Need donut
+  const need  = items.filter(i=>i.necessidade==='Necessário').length;
+  const util  = items.filter(i=>i.necessidade==='Útil').length;
+  const sup   = items.filter(i=>i.necessidade==='Supérfluo').length;
+  const other = items.filter(i=>!i.necessidade).length;
+  destroyChart('need-ov');
+  chartInstances['need-ov'] = new Chart(document.getElementById('chart-need-overview'), {
+    type:'doughnut',
+    data:{ labels:['Necessário','Útil','Supérfluo','Sem categoria'], datasets:[{ data:[need,util,sup,other], backgroundColor:['#7A9E7E','#C9A84C','#C8714A','#CCCCCC'], borderWidth:2, borderColor:'#fff' }] },
+    options:{ responsive:true, plugins:{ legend:{ position:'bottom', labels:{font:{family:'DM Sans'},boxWidth:12} } } }
+  });
+
+  // Top items horizontal bar
+  const topItems = items.filter(i=>itemCost(i)>0).sort((a,b)=>itemCost(b)-itemCost(a)).slice(0,10);
+  destroyChart('top-items');
+  chartInstances['top-items'] = new Chart(document.getElementById('chart-top-items'), {
+    type:'bar',
+    data:{
+      labels: topItems.map(i=>i.item.length>22 ? i.item.slice(0,20)+'…' : i.item),
+      datasets:[{ label:'Estimado (R$)', data:topItems.map(i=>itemCost(i)), backgroundColor:'#C8714A88', borderColor:'#C8714A', borderWidth:1.5 }]
+    },
+    options:{ indexAxis:'y', responsive:true, plugins:{ legend:{display:false} }, scales:{ x:{ beginAtZero:true, ticks:{ callback:v=>`R$${v}`, font:{family:'DM Sans',size:10} } }, y:{ ticks:{font:{family:'DM Sans',size:10}} } } }
+  });
+}
+
+function showPieDetail(roomKey) {
+  const panel = document.getElementById('pie-detail');
+  const items = roomItems(roomKey);
+  if (!items.length) { panel.innerHTML='<p style="color:var(--mid);font-size:.85rem">Nenhum item cadastrado.</p>'; panel.classList.add('open'); return; }
+  panel.innerHTML = `
+    <div style="display:flex;justify-content:space-between;margin-bottom:12px;align-items:center">
+      <strong style="font-family:'Playfair Display',serif">${ROOM_META[roomKey]?.icon} ${ROOM_META[roomKey]?.label}</strong>
+      <button onclick="document.getElementById('pie-detail').classList.remove('open')" style="border:none;background:none;cursor:pointer;color:var(--mid)">✕</button>
+    </div>
+    <table style="width:100%;font-size:.78rem">
+      <thead><tr style="background:var(--cream)"><th style="padding:5px 8px;text-align:left">Item</th><th>Status</th><th>Presente</th><th style="text-align:right">Custo</th></tr></thead>
+      <tbody>${items.map(i=>`
+        <tr>
+          <td style="padding:4px 8px">${i.item}</td>
+          <td style="text-align:center">${i.bought?'✅':'⬜'}</td>
+          <td style="text-align:center">${i.presente?'🎁':''}</td>
+          <td style="text-align:right;font-weight:600;color:var(--sage-dark)">${fmtBRL(itemCost(i)||null)}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+  `;
+  panel.classList.add('open');
+}
+
+/* ═══════════════════════════════════════════════
+   ROOM TAB
+═══════════════════════════════════════════════ */
+function renderRoom(key) {
+  const items = roomItems(key);
+  const meta = ROOM_META[key];
+  const el = document.getElementById(`tab-${key}`);
+  if (!el) return;
+
+  const total    = items.length;
+  const bought   = items.filter(i=>i.bought).length;
+  const giftC    = items.filter(i=>i.presente).length;
+  const pct      = total > 0 ? Math.round(bought/total*100) : 0;
+  const totalEst = items.reduce((s,i)=>s+itemCost(i),0);
+  const totalPago= items.reduce((s,i)=>s+(i.pago||0),0);
+
+  // Best prices from historico
+  const withPrice = items.filter(i=>i.historico&&i.historico.length);
+
+  el.innerHTML = `
+    <!-- KPIs -->
+    <div class="kpi-grid">
+      <div class="kpi-card t"><div class="kpi-label">Total Pago</div><div class="kpi-value">${fmtK(totalPago)}</div><div class="kpi-sub">${bought} itens comprados</div></div>
+      <div class="kpi-card"><div class="kpi-label">Estimado</div><div class="kpi-value">${fmtK(totalEst)}</div><div class="kpi-sub">custo total projetado</div></div>
+      <div class="kpi-card g"><div class="kpi-label">Pendentes</div><div class="kpi-value">${total-bought-giftC}</div><div class="kpi-sub">itens para comprar</div></div>
+      <div class="kpi-card gift"><div class="kpi-label">🎁 Presentes</div><div class="kpi-value">${giftC}</div><div class="kpi-sub">recebidos ou prometidos</div></div>
+    </div>
+
+    <!-- Progress -->
+    <div class="progress-section">
+      <div class="progress-header">
+        <span class="progress-title">Progresso — ${meta.label}</span>
+        <span class="progress-pct" id="pct-${key}">${pct}%</span>
+      </div>
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="bar-${key}" style="width:0%"></div></div>
+    </div>
+
+    <!-- Mini stats -->
+    <div class="mini-stats">
+      <div class="mini-stat"><div class="val" style="color:#3A7A4A">${items.filter(i=>i.necessidade==='Necessário').length}</div><div class="lbl">Necessários</div></div>
+      <div class="mini-stat"><div class="val" style="color:#B06020">${items.filter(i=>i.necessidade==='Útil').length}</div><div class="lbl">Úteis</div></div>
+      <div class="mini-stat"><div class="val" style="color:#666">${items.filter(i=>i.necessidade==='Supérfluo').length}</div><div class="lbl">Supérfluos</div></div>
+      <div class="mini-stat"><div class="val" style="color:#C62828">${items.filter(i=>i.prioridade==='P1').length}</div><div class="lbl">Prioridade 1</div></div>
+      <div class="mini-stat"><div class="val" style="color:#3949AB">${withPrice.length}</div><div class="lbl">C/ Histórico</div></div>
+    </div>
+
+    <!-- Charts -->
+    <div class="charts-row">
+      <div class="chart-card"><h3>Por Necessidade</h3><canvas id="chart-need-${key}" style="max-height:250px"></canvas></div>
+      <div class="chart-card"><h3>Estimado por Prioridade</h3><canvas id="chart-prio-${key}" style="max-height:250px"></canvas></div>
+    </div>
+
+    <!-- Priority cols -->
+    <div class="section-title">🎯 Por Prioridade</div>
+    <div class="priority-cols">
+      ${['P1','P2','P3','P4','P5'].map((p,i)=>`
+        <div class="prio-col p${i+1}-col">
+          <h4>${p} ${'🔴🟠🟡🟢🔵'[i]}</h4>
+          ${items.filter(x=>x.prioridade===p).map(x=>{
+            const safeX = x.item.replace(/'/g,"\\'");
+            return `<div class="prio-item ${x.bought?'done':''} ${x.presente?'gift-item':''}">
+              <span class="cb-toggle" onclick="toggleBought('${key}','${safeX}',this)">${x.bought?'✅':x.presente?'🎁':'⬜'}</span>
+              <span class="item-row-name" style="border:none;font-size:.77rem" onclick="openItemDetail('${key}','${safeX}')">${x.item}</span>
+            </div>`;}).join('')}
+        </div>`).join('')}
+    </div>
+
+    <!-- Table -->
+    <div class="table-section">
+      <div class="section-title">📋 Lista Completa <span class="badge-count" id="tcount-${key}">${total}</span></div>
+      <div class="filters-row">
+        <button class="filter-btn active" onclick="filterRoomTable('all',this,'${key}')">Todos</button>
+        <button class="filter-btn" onclick="filterRoomTable('necessario',this,'${key}')">Necessário</button>
+        <button class="filter-btn" onclick="filterRoomTable('util',this,'${key}')">Útil</button>
+        <button class="filter-btn" onclick="filterRoomTable('superfluo',this,'${key}')">Supérfluo</button>
+        <button class="filter-btn" onclick="filterRoomTable('bought',this,'${key}')">✅ Comprados</button>
+        <button class="filter-btn" onclick="filterRoomTable('gift',this,'${key}')">🎁 Presentes</button>
+        <button class="filter-btn" onclick="filterRoomTable('pending',this,'${key}')">⏳ Pendentes</button>
+        <input class="search-input" id="search-${key}" placeholder="🔍 Buscar..." oninput="searchRoomTable(this.value,'${key}')">
+      </div>
+      <div style="overflow-x:auto;border-radius:var(--r);box-shadow:var(--shadow)">
+        <table>
+          <thead><tr>
+            <th>✓</th><th>Item</th><th>Necessidade</th><th>Qtd</th><th>Prior.</th>
+            <th>Estimado</th><th>Menor Preço</th><th>Pago</th><th>Presente</th><th></th>
+          </tr></thead>
+          <tbody id="tbody-${key}"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Price tracker -->
+    <div style="margin-bottom:40px">
+      <div class="section-title">💰 Pesquisa de Preços</div>
+      <div class="price-grid">
+        <div class="price-form-card">
+          <h3>Registrar Preço</h3>
+          <div class="form-group"><label>Item</label><select id="psel-${key}">${items.filter(i=>i.item).map(i=>`<option value="${i.item}">${i.item}</option>`).join('')}</select></div>
+          <div class="form-group"><label>Valor (R$)</label><input type="number" id="pval-${key}" step="0.01" placeholder="0,00"></div>
+          <div class="form-group"><label>Loja / Fonte</label><input type="text" id="pstore-${key}" placeholder="Ex: Americanas, Shopee…"></div>
+          <div class="form-group"><label>Link (opcional)</label><input type="url" id="plink-${key}" placeholder="https://…"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div class="form-group"><label>Data</label><input type="date" id="pdate-${key}" value="${new Date().toISOString().split('T')[0]}"></div>
+            <div class="form-group"><label>Hora (opcional)</label><input type="time" id="ptime-${key}" value="${new Date().toTimeString().slice(0,5)}"></div>
+          </div>
+          <button class="btn-primary" onclick="addPrice('${key}')">+ Registrar na Planilha</button>
+          <div id="price-status-${key}" style="font-size:.78rem;margin-top:10px;color:var(--sage-dark)"></div>
+        </div>
+        <div class="price-hist-card">
+          <h3>Histórico de Preços</h3>
+          <div class="form-group"><label>Selecionar Item</label>
+            <select id="hsel-${key}" onchange="renderPriceChart('${key}')">${items.filter(i=>i.item).map(i=>`<option value="${i.item}">${i.item}</option>`).join('')}</select>
+          </div>
+          <div class="period-selector" id="period-sel-${key}">
+            <button class="period-btn" onclick="setPeriod('${key}', 7, this)">7 dias</button>
+            <button class="period-btn active" onclick="setPeriod('${key}', 30, this)">1 mês</button>
+            <button class="period-btn" onclick="setPeriod('${key}', 90, this)">3 meses</button>
+            <button class="period-btn" onclick="setPeriod('${key}', 365, this)">1 ano</button>
+          </div>
+          <canvas id="chart-price-${key}" style="max-height:200px"></canvas>
+          <div class="price-log" id="plog-${key}"></div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Animate progress bar
+  setTimeout(() => { const b = document.getElementById(`bar-${key}`); if(b) b.style.width = pct + '%'; }, 100);
+
+  // Render sub-charts
+  renderRoomCharts(key, items);
+  renderRoomTable(key, items, 'all', '');
+  renderPriceChart(key);
+}
+
+function renderRoomCharts(key, items) {
+  // Need chart
+  destroyChart(`need-${key}`);
+  const ctx1 = document.getElementById(`chart-need-${key}`)?.getContext('2d');
+  if (ctx1) chartInstances[`need-${key}`] = new Chart(ctx1, {
+    type:'doughnut',
+    data:{ labels:['Necessário','Útil','Supérfluo','Sem cat.'],
+      datasets:[{ data:[items.filter(i=>i.necessidade==='Necessário').length, items.filter(i=>i.necessidade==='Útil').length, items.filter(i=>i.necessidade==='Supérfluo').length, items.filter(i=>!i.necessidade).length],
+      backgroundColor:['#7A9E7E','#C9A84C','#C8714A','#CCCCCC'], borderWidth:2, borderColor:'#fff' }] },
+    options:{ responsive:true, plugins:{ legend:{ position:'bottom', labels:{font:{family:'DM Sans'},boxWidth:12} } } }
+  });
+
+  // Prio chart
+  destroyChart(`prio-${key}`);
+  const ctx2 = document.getElementById(`chart-prio-${key}`)?.getContext('2d');
+  if (ctx2) chartInstances[`prio-${key}`] = new Chart(ctx2, {
+    type:'bar',
+    data:{ labels:['P1','P2','P3','P4','P5'],
+      datasets:[{ label:'Estimado (R$)', data:['P1','P2','P3','P4','P5'].map(p=>items.filter(i=>i.prioridade===p).reduce((s,i)=>s+itemCost(i),0)),
+      backgroundColor:['#FDECEA','#FFF3E0','#FFF9C4','#E8F5E9','#E8EAF6'], borderColor:['#C62828','#E65100','#827717','#2E7D32','#3949AB'], borderWidth:2 }] },
+    options:{ responsive:true, plugins:{legend:{display:false}}, scales:{ y:{beginAtZero:true, ticks:{callback:v=>`R$${v}`,font:{family:'DM Sans',size:11}}}, x:{ticks:{font:{family:'DM Sans'}}} } }
+  });
+}
+
+function renderRoomTable(key, items, filter, search) {
+  const filtered = items.filter(i => {
+    if (!i.item) return false;
+    if (filter === 'necessario' && i.necessidade !== 'Necessário') return false;
+    if (filter === 'util'       && i.necessidade !== 'Útil')       return false;
+    if (filter === 'superfluo'  && i.necessidade !== 'Supérfluo')  return false;
+    if (filter === 'bought'     && !i.bought)                      return false;
+    if (filter === 'gift'       && !i.presente)                    return false;
+    if (filter === 'pending'    && (i.bought || i.presente))       return false;
+    if (search && !i.item.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  });
+
+  const cnt = document.getElementById(`tcount-${key}`);
+  if (cnt) cnt.textContent = filtered.length;
+
+  const tbody = document.getElementById(`tbody-${key}`);
+  if (!tbody) return;
+
+  tbody.innerHTML = filtered.map(i => {
+    const nc = i.necessidade==='Necessário'?'n-n':i.necessidade==='Útil'?'n-u':i.necessidade==='Supérfluo'?'n-s':'';
+    const pc = `pb-${(i.prioridade||'P3')[1]}`;
+    const bp = bestPrice(i);
+    const safeItem = i.item.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    return `<tr class="${i.bought?'bought-row':''} ${i.presente?'gift-row':''}">
+      <td>
+        <span class="cb-toggle" title="Clique para alterar" onclick="toggleBought('${key}','${safeItem}',this)">
+          ${i.bought?'✅':'⬜'}
+        </span>
+      </td>
+      <td>
+        <span class="item-row-name" onclick="openItemDetail('${key}','${safeItem}')">${i.item}</span>
+        ${i.modelo?`<div style="font-size:.7rem;color:var(--mid);margin-top:2px">${i.modelo}</div>`:''}
+      </td>
+      <td>${i.necessidade?`<span class="need-badge ${nc}">${i.necessidade}</span>`:''}</td>
+      <td style="text-align:center">${i.qtd||1}</td>
+      <td><span class="prio-badge ${pc}">${i.prioridade||''}</span></td>
+      <td>${fmtBRL(parseNum(i.estimado))}</td>
+      <td>${bp?`<span class="price-best">${fmtBRL(bp.valor)}</span><div class="price-date">${bp.loja||''} · ${bp.data||''}</div>`:'—'}</td>
+      <td>${parseNum(i.pago)?`<span style="color:var(--terra);font-weight:700">${fmtBRL(parseNum(i.pago))}</span>`:'—'}</td>
+      <td>${i.presente?`<span class="gift-badge">🎁 ${i.presente}</span>`:''}</td>
+      <td>
+        <button class="plog-action-btn edit" style="white-space:nowrap"
+          onclick="openEditItem('${key}','${safeItem}')">✏️</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function filterRoomTable(f, btn, key) {
+  btn.closest('.filters-row').querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const search = document.getElementById(`search-${key}`)?.value || '';
+  renderRoomTable(key, roomItems(key), f, search);
+}
+
+function searchRoomTable(val, key) {
+  const activeBtn = document.querySelector(`#tab-${key} .filter-btn.active`);
+  const filter = activeBtn?.dataset?.filter || 'all';
+  renderRoomTable(key, roomItems(key), filter, val);
+}
+
+/* ═══════════════════════════════════════════════
+   PRICE CHART
+═══════════════════════════════════════════════ */
+// Stores selected period per room key
+const pricePeriods = {};
+// Currently highlighted point id (for click-to-inspect on chart)
+let activePointId = null;
+
+function setPeriod(key, days, btn) {
+  pricePeriods[key] = days;
+  const container = btn.closest('.period-selector');
+  container.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderPriceChart(key);
+}
+
+// ── Ensure every record has a stable unique id ──
+function ensureIds(historico) {
+  let changed = false;
+  historico.forEach(r => {
+    if (!r.id) {
+      r.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      changed = true;
+    }
+    // Normalise old date-only strings to datetime so sorting is consistent
+    if (r.data && !r.data.includes('T')) {
+      r.data = r.data + 'T00:00';
+      changed = true;
+    }
+  });
+  return changed;
+}
+
+function renderPriceChart(key) {
+  const sel = document.getElementById(`hsel-${key}`);
+  if (!sel) return;
+  const itemName = sel.value;
+  const item = roomItems(key).find(i => i.item === itemName);
+
+  const rawHistorico = item?.historico || [];
+  ensureIds(rawHistorico);
+
+  const allRecords = rawHistorico.slice().sort((a, b) => new Date(a.data) - new Date(b.data));
+
+  // Period filter
+  const periodDays = pricePeriods[key] || 30;
+  const now    = new Date();
+  const cutoff = new Date(now);
+  cutoff.setDate(cutoff.getDate() - periodDays);
+  const records = allRecords.filter(r => r.data && new Date(r.data) >= cutoff);
+
+  const xMin = new Date(cutoff);
+  const xMax = new Date(now);
+  let timeUnit = 'day';
+  if (periodDays > 90)  timeUnit = 'week';
+  if (periodDays > 180) timeUnit = 'month';
+
+  // ── Palette: deterministic color per store name ──
+  const PALETTE = [
+    { border:'#7A9E7E', bg:'rgba(122,158,126,.12)', dot:'#4E7553' },  // sage
+    { border:'#C9A84C', bg:'rgba(201,168,76,.12)',  dot:'#9A7A20' },  // gold
+    { border:'#C8714A', bg:'rgba(200,113,74,.12)',  dot:'#9A4A25' },  // terra
+    { border:'#6B9CB8', bg:'rgba(107,156,184,.12)', dot:'#3A6A88' },  // blue
+    { border:'#9B7EBD', bg:'rgba(155,126,189,.12)', dot:'#6B4E8D' },  // purple
+    { border:'#E08080', bg:'rgba(224,128,128,.12)', dot:'#B05050' },  // rose
+    { border:'#5B8A8A', bg:'rgba(91,138,138,.12)',  dot:'#2B5A5A' },  // teal
+    { border:'#D4A96A', bg:'rgba(212,169,106,.12)', dot:'#A47940' },  // amber
+  ];
+
+  // Assign a color index per store name, stable across re-renders
+  const storeColorMap = {};
+  let colorIdx = 0;
+  // First pass: collect all stores from allRecords (not just period) for stable colors
+  allRecords.forEach(r => {
+    const store = (r.loja || '').trim() || 'Sem loja';
+    if (!(store in storeColorMap)) {
+      storeColorMap[store] = colorIdx % PALETTE.length;
+      colorIdx++;
+    }
+  });
+
+  // Group records by store
+  const storeNames = Object.keys(storeColorMap);
+  const byStore = {};
+  storeNames.forEach(s => { byStore[s] = []; });
+  records.forEach(r => {
+    const store = (r.loja || '').trim() || 'Sem loja';
+    byStore[store].push(r);
+  });
+
+  // ── Build one step-line dataset per store ──
+  // Also keep a flat map: datasetIdx → [stepPoints] for click resolution
+  const datasetsStepPoints = []; // parallel to datasets array
+
+  const datasets = storeNames.map(store => {
+    const storeRecords = byStore[store] || [];
+    const pal = PALETTE[storeColorMap[store]];
+
+    // Build step points for this store
+    const sp = [];
+    storeRecords.forEach((r, i) => {
+      const xCur  = new Date(r.data);
+      const xNext = storeRecords[i + 1] ? new Date(storeRecords[i + 1].data) : new Date(now);
+      sp.push({ x: xCur, y: r.valor, id: r.id });
+      if (i < storeRecords.length - 1) {
+        sp.push({ x: xNext, y: r.valor, id: null }); // horizontal connector
+      }
+    });
+    datasetsStepPoints.push(sp);
+
+    return {
+      label: store,
+      data:  sp.map(p => ({ x: p.x, y: p.y })),
+      borderColor:           pal.border,
+      backgroundColor:       pal.bg,
+      tension:               0,
+      stepped:               false,
+      pointBackgroundColor:  sp.map(p => p.id === activePointId ? '#FF4500' : p.id ? pal.dot : 'transparent'),
+      pointBorderColor:      sp.map(p => p.id ? '#fff' : 'transparent'),
+      pointBorderWidth:      2,
+      pointRadius:           sp.map(p => p.id ? 4 : 0),
+      pointHoverRadius:      sp.map(p => p.id ? 7 : 0),
+      pointHitRadius:        sp.map(p => p.id ? 16 : 0),
+      fill:                  false,
+      spanGaps:              false,
+    };
+  });
+
+  destroyChart(`price-${key}`);
+  const ctx = document.getElementById(`chart-price-${key}`)?.getContext('2d');
+  if (!ctx) return;
+
+  chartInstances[`price-${key}`] = new Chart(ctx, {
+    type: 'line',
+    data: { datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      interaction: { mode: 'point', intersect: true },
+      plugins: {
+        legend: {
+          display: storeNames.length > 1,
+          position: 'top',
+          labels: {
+            font: { family: 'DM Sans', size: 11 },
+            boxWidth: 14,
+            padding: 12,
+          }
+        },
+        tooltip: {
+          filter: item => {
+            const sp = datasetsStepPoints[item.datasetIndex];
+            return sp?.[item.dataIndex]?.id != null;
+          },
+          callbacks: {
+            title: items => {
+              const d = new Date(items[0].parsed.x);
+              const sp = datasetsStepPoints[items[0].datasetIndex];
+              const p  = sp?.[items[0].dataIndex];
+              const r  = records.find(x => x.id === p?.id);
+              const dateStr = d.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric' });
+              const hasTime = r?.data?.includes('T') && !r.data.endsWith('T00:00');
+              const timeStr = hasTime ? ' ' + d.toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}) : '';
+              return dateStr + timeStr;
+            },
+            label: item => {
+              const sp = datasetsStepPoints[item.datasetIndex];
+              const p  = sp?.[item.dataIndex];
+              const r  = records.find(x => x.id === p?.id);
+              const loja = r?.loja ? ` — ${r.loja}` : '';
+              return ` ${fmtBRL(item.parsed.y)}${loja}`;
+            },
+            afterLabel: item => {
+              const sp = datasetsStepPoints[item.datasetIndex];
+              const p  = sp?.[item.dataIndex];
+              const r  = records.find(x => x.id === p?.id);
+              return r?.link ? ` 🔗 ${r.link}` : '';
+            }
+          }
+        }
+      },
+      onClick: (event, elements) => {
+        const hit = elements.find(el => {
+          const sp = datasetsStepPoints[el.datasetIndex];
+          return sp?.[el.index]?.id;
+        });
+        if (!hit) { activePointId = null; renderPriceChart(key); return; }
+        const sp = datasetsStepPoints[hit.datasetIndex];
+        const p  = sp[hit.index];
+        const r  = records.find(x => x.id === p.id);
+        if (!r) return;
+        activePointId = (activePointId === r.id) ? null : r.id;
+        renderPriceChart(key);
+        highlightLogItem(key, r.id);
+      },
+      scales: {
+        x: {
+          type: 'time',
+          min: xMin,
+          max: xMax,
+          time: {
+            unit: timeUnit,
+            tooltipFormat: 'dd/MM/yyyy',
+            displayFormats: { hour:'dd/MM HH:mm', day:'dd/MM', week:'dd/MM', month:'MMM/yy' }
+          },
+          ticks: { font:{family:'DM Sans',size:10}, color:'#6B6B6B', maxRotation:0 },
+          grid:  { color:'rgba(0,0,0,0.05)' }
+        },
+        y: {
+          beginAtZero: false,
+          ticks: { callback: v => `R$${v}`, font:{family:'DM Sans',size:10}, color:'#6B6B6B' },
+          grid:  { color:'rgba(0,0,0,0.05)' }
+        }
+      }
+    }
+  });
+
+  // ── Price log grouped by store ──
+  const log = document.getElementById(`plog-${key}`);
+  if (!log) return;
+
+  if (!allRecords.length) {
+    log.innerHTML = '<div class="no-records">Nenhum preço registrado para este item.</div>';
+    return;
+  }
+  if (!records.length) {
+    log.innerHTML = '<div class="no-records">Nenhum registro neste período.</div>';
+    return;
+  }
+
+  const globalMin = Math.min(...records.map(r => r.valor));
+
+  // Group log by store, each store section has its color dot
+  let logHtml = '';
+  storeNames.forEach(store => {
+    const storeRecords = [...(byStore[store] || [])].reverse();
+    if (!storeRecords.length) return;
+    const pal = PALETTE[storeColorMap[store]];
+    const storeMin = Math.min(...storeRecords.map(r => r.valor));
+
+    logHtml += `
+      <div class="plog-store-header">
+        <span class="plog-store-dot" style="background:${pal.border}"></span>
+        <strong>${store}</strong>
+        <span class="plog-store-best">mínimo: ${fmtBRL(storeMin)}</span>
+      </div>`;
+
+    storeRecords.forEach(r => {
+      const isGlobalMin = r.valor === globalMin;
+      const isActive    = r.id === activePointId;
+      logHtml += `
+      <div class="plog-item ${isActive ? 'plog-active' : ''}" id="plog-item-${r.id}"
+           style="${isActive ? `border-left-color:${pal.border}` : ''}">
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:500">
+            ${r.data ? (() => {
+              const d = new Date(r.data);
+              const dateStr = d.toLocaleDateString('pt-BR');
+              const hasTime = r.data.includes('T') && !r.data.endsWith('T00:00');
+              const timeStr = hasTime ? ' ' + d.toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}) : '';
+              return dateStr + timeStr;
+            })() : '—'}
+            ${isGlobalMin ? '<span class="tag-min">menor geral 🏷️</span>' : ''}
+            ${isActive    ? '<span class="tag-sel">selecionado 📍</span>' : ''}
+          </div>
+          ${r.link ? `<div class="plog-meta"><a href="${r.link}" target="_blank" class="plog-link">🔗 Ver produto</a></div>` : ''}
+          <div class="plog-actions">
+            <button class="plog-action-btn edit" onclick="openEditPrice('${key}', '${r.id}')">✏️ Editar</button>
+            <button class="plog-action-btn del"  onclick="confirmDeletePrice('${key}', '${r.id}')">🗑️ Excluir</button>
+          </div>
+        </div>
+        <div class="plog-val" style="color:${pal.dot};flex-shrink:0;padding-left:12px">
+          ${fmtBRL(r.valor)}
+        </div>
+      </div>`;
+    });
+  });
+
+  log.innerHTML = logHtml;
+}
+
+
+function highlightLogItem(key, id) {
+  const log = document.getElementById(`plog-${key}`);
+  if (!log) return;
+  // Remove all active highlights first
+  log.querySelectorAll('.plog-item').forEach(el => el.classList.remove('plog-active'));
+  const el = document.getElementById(`plog-item-${id}`);
+  if (el) {
+    el.classList.add('plog-active');
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   ADD PRICE (writes to sheet)
+═══════════════════════════════════════════════ */
+async function addPrice(key) {
+  const item  = document.getElementById(`psel-${key}`).value;
+  const val   = parseFloat(document.getElementById(`pval-${key}`).value);
+  const store = document.getElementById(`pstore-${key}`).value.trim();
+  const link  = document.getElementById(`plink-${key}`).value.trim();
+  const dateVal = document.getElementById(`pdate-${key}`).value;
+  const timeVal = document.getElementById(`ptime-${key}`).value;
+  const date = dateVal + (timeVal ? 'T' + timeVal : 'T00:00');
+  const status = document.getElementById(`price-status-${key}`);
+
+  if (!item || isNaN(val) || val <= 0) { status.style.color='#C62828'; status.textContent='Preencha o item e o valor.'; return; }
+
+  status.style.color = 'var(--mid)';
+  status.textContent = 'Salvando…';
+
+  try {
+    const res = await apiFetch({ action:'addPrice', room:key, item, valor:val, loja:store, link, data:date });
+    if (res.error) throw new Error(res.error);
+
+    // Update local state
+    const it = roomItems(key).find(i=>i.item===item);
+    if (it) {
+      if (!it.historico) it.historico = [];
+      const newId = Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+      it.historico.push({ id:newId, valor:val, loja:store, link, data:date });
+    }
+
+    status.style.color = 'var(--sage-dark)';
+    status.textContent = '✅ Preço salvo na planilha!';
+    document.getElementById(`pval-${key}`).value = '';
+    document.getElementById(`pstore-${key}`).value = '';
+    document.getElementById(`plink-${key}`).value = '';
+
+    // Refresh history chart if same item selected
+    if (document.getElementById(`hsel-${key}`)?.value === item) renderPriceChart(key);
+
+    // Refresh table to show updated best price
+    const activeBtn = document.querySelector(`#tab-${key} .filter-btn.active`);
+    const f = activeBtn?.onclick?.toString().match(/'(\w+)'/)?.[1] || 'all';
+    renderRoomTable(key, roomItems(key), f, '');
+
+    setTimeout(() => { status.textContent = ''; }, 4000);
+  } catch(e) {
+    status.style.color = '#C62828';
+    status.textContent = 'Erro: ' + e.message;
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   EDIT / DELETE PRICE RECORD
+   Uses stable record.id — never array indices.
+═══════════════════════════════════════════════ */
+let editCtx = null; // { key, itemName, recordId }
+
+function openEditPrice(key, recordId) {
+  const itemName = document.getElementById(`hsel-${key}`)?.value;
+  const item = roomItems(key).find(i => i.item === itemName);
+  const r = item?.historico?.find(x => x.id === recordId);
+  if (!r) { alert('Registro não encontrado.'); return; }
+
+  editCtx = { key, itemName, recordId };
+  document.getElementById('edit-val').value  = r.valor || '';
+  document.getElementById('edit-loja').value = r.loja  || '';
+  document.getElementById('edit-link').value = r.link  || '';
+  // Split datetime: "2025-04-16T14:30" → date="2025-04-16", time="14:30"
+  const [editDatePart, editTimePart] = (r.data || '').split('T');
+  document.getElementById('edit-date').value = editDatePart || '';
+  document.getElementById('edit-time').value = editTimePart || '';
+  document.getElementById('edit-modal-status').textContent = '';
+  document.getElementById('edit-price-modal').classList.add('open');
+}
+
+function closeEditModal() {
+  document.getElementById('edit-price-modal').classList.remove('open');
+  editCtx = null;
+}
+
+async function saveEditPrice() {
+  if (!editCtx) return;
+  const { key, itemName, recordId } = editCtx;
+
+  const val      = parseFloat(document.getElementById('edit-val').value);
+  const loja     = document.getElementById('edit-loja').value.trim();
+  const link     = document.getElementById('edit-link').value.trim();
+  const datePart = document.getElementById('edit-date').value;
+  const timePart = document.getElementById('edit-time').value;
+  const data     = datePart + (timePart ? 'T' + timePart : 'T00:00');
+  const status = document.getElementById('edit-modal-status');
+
+  if (isNaN(val) || val <= 0) { status.style.color='#C62828'; status.textContent='Valor inválido.'; return; }
+  if (!datePart) { status.style.color='#C62828'; status.textContent='Informe a data.'; return; }
+
+  const item = roomItems(key).find(i => i.item === itemName);
+  const idx  = item?.historico?.findIndex(x => x.id === recordId);
+  if (!item || idx === -1 || idx === undefined) { status.textContent='Registro não encontrado.'; return; }
+
+  status.style.color = 'var(--mid)';
+  status.textContent = 'Salvando…';
+
+  // Update local state by id
+  item.historico[idx] = { id: recordId, valor: val, loja, link, data };
+
+  try {
+    const res = await apiFetch({
+      action:    'saveFullHistorico',
+      room:      key,
+      item:      itemName,
+      historico: JSON.stringify(item.historico)
+    });
+    if (res.error) throw new Error(res.error);
+    status.style.color = 'var(--sage-dark)';
+    status.textContent = '✅ Salvo!';
+    activePointId = null;
+    setTimeout(() => {
+      closeEditModal();
+      renderPriceChart(key);
+      renderRoomTable(key, roomItems(key), 'all', '');
+    }, 600);
+  } catch(e) {
+    status.style.color = '#C62828';
+    status.textContent = 'Erro: ' + e.message;
+    // Rollback
+    loadAllData();
+  }
+}
+
+async function confirmDeletePrice(key, recordId) {
+  const itemName = document.getElementById(`hsel-${key}`)?.value;
+  const item = roomItems(key).find(i => i.item === itemName);
+  const r = item?.historico?.find(x => x.id === recordId);
+  if (!r) { alert('Registro não encontrado.'); return; }
+
+  const label = `${fmtBRL(r.valor)}  ·  ${r.loja || 'sem loja'}  ·  ${r.data || 'sem data'}`;
+  if (!confirm(`Excluir este registro?\n\n${label}`)) return;
+
+  // Remove by id from local state
+  item.historico = item.historico.filter(x => x.id !== recordId);
+  if (activePointId === recordId) activePointId = null;
+
+  try {
+    const res = await apiFetch({
+      action:    'saveFullHistorico',
+      room:      key,
+      item:      itemName,
+      historico: JSON.stringify(item.historico)
+    });
+    if (res.error) throw new Error(res.error);
+    renderPriceChart(key);
+    renderRoomTable(key, roomItems(key), 'all', '');
+  } catch(e) {
+    alert('Erro ao excluir: ' + e.message);
+    loadAllData();
+  }
+}
+
+
+/* ═══════════════════════════════════════════════
+   ITEM DETAIL MODAL
+═══════════════════════════════════════════════ */
+let detailCtx = null; // { key, itemName }
+
+function openItemDetail(key, itemName) {
+  const item = roomItems(key).find(i => i.item === itemName);
+  if (!item) return;
+  detailCtx = { key, itemName };
+
+  const bp = bestPrice(item);
+  const periodDays = pricePeriods[key] || 30;
+  const now = new Date();
+  const cutoff = new Date(now); cutoff.setDate(cutoff.getDate() - periodDays);
+  const periodRecords = (item.historico||[]).filter(r => r.data && new Date(r.data) >= cutoff);
+  const currentRecord = periodRecords.length
+    ? periodRecords.reduce((a,b) => new Date(a.data)>new Date(b.data)?a:b)
+    : null;
+
+  const nc = item.necessidade==='Necessário'?'n-n':item.necessidade==='Útil'?'n-u':item.necessidade==='Supérfluo'?'n-s':'';
+  const pc = `pb-${(item.prioridade||'P3')[1]}`;
+
+  document.getElementById('item-detail-body').innerHTML = `
+    <div class="item-detail-header">
+      <div>
+        <div class="item-detail-title">${item.item}</div>
+        <div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap">
+          ${item.necessidade?`<span class="need-badge ${nc}">${item.necessidade}</span>`:''}
+          ${item.prioridade?`<span class="prio-badge ${pc}">${item.prioridade}</span>`:''}
+          ${item.presente?`<span class="gift-badge">🎁 ${item.presente}</span>`:''}
+          ${item.bought?'<span class="need-badge n-n">✅ Comprado</span>':'<span class="need-badge" style="background:#F5F5F5;color:#666">⬜ Pendente</span>'}
+        </div>
+      </div>
+      <button class="plog-action-btn edit" onclick="openEditItem('${key}','${itemName.replace(/'/g,"\\'")}');closeItemDetail()">✏️ Editar</button>
+    </div>
+
+    <div class="item-detail-grid">
+      <div class="item-detail-field">
+        <label>Quantidade</label>
+        <div class="field-val">${item.qtd||1}</div>
+      </div>
+      <div class="item-detail-field">
+        <label>Valor Estimado</label>
+        <div class="field-val">${fmtBRL(parseNum(item.estimado))}</div>
+      </div>
+      <div class="item-detail-field">
+        <label>Valor Pago</label>
+        <div class="field-val" style="color:var(--terra);font-weight:700">${fmtBRL(parseNum(item.pago))}</div>
+      </div>
+      <div class="item-detail-field">
+        <label>Modelo Escolhido</label>
+        <div class="field-val">${item.modelo||'—'}</div>
+      </div>
+    </div>
+
+    ${(item.historico||[]).length ? `
+    <div class="item-detail-chart">
+      <h4>Histórico de Preços</h4>
+      ${(currentRecord||bp) ? `
+      <div class="price-summary-row">
+        ${currentRecord?`<span class="price-summary-chip chip-current">Atual: ${fmtBRL(currentRecord.valor)} · ${currentRecord.loja||'?'}</span>`:''}
+        ${bp?`<span class="price-summary-chip chip-best">Menor registrado: ${fmtBRL(bp.valor)} · ${bp.loja||'?'}</span>`:''}
+      </div>` : ''}
+      <canvas id="detail-price-chart" style="max-height:180px"></canvas>
+    </div>` : '<div style="color:var(--mid);font-size:.82rem;padding:12px 0">Nenhum preço registrado ainda.</div>'}
+  `;
+
+  document.getElementById('item-detail-modal').classList.add('open');
+
+  // Render mini chart inside modal
+  if ((item.historico||[]).length) {
+    setTimeout(() => renderDetailChart(item, periodDays), 50);
+  }
+}
+
+function renderDetailChart(item, periodDays) {
+  const ctx = document.getElementById('detail-price-chart');
+  if (!ctx) return;
+  if (window._detailChart) { window._detailChart.destroy(); }
+
+  const PALETTE = [
+    { border:'#7A9E7E', bg:'rgba(122,158,126,.12)', dot:'#4E7553' },
+    { border:'#C9A84C', bg:'rgba(201,168,76,.12)',  dot:'#9A7A20' },
+    { border:'#C8714A', bg:'rgba(200,113,74,.12)',  dot:'#9A4A25' },
+    { border:'#6B9CB8', bg:'rgba(107,156,184,.12)', dot:'#3A6A88' },
+    { border:'#9B7EBD', bg:'rgba(155,126,189,.12)', dot:'#6B4E8D' },
+  ];
+
+  ensureIds(item.historico);
+  const allRecords = item.historico.slice().sort((a,b)=>new Date(a.data)-new Date(b.data));
+  const now = new Date();
+  const cutoff = new Date(now); cutoff.setDate(cutoff.getDate()-periodDays);
+  const records = allRecords.filter(r=>r.data&&new Date(r.data)>=cutoff);
+
+  const storeMap = {};
+  let ci = 0;
+  allRecords.forEach(r=>{const s=(r.loja||'').trim()||'Sem loja'; if(!(s in storeMap)){storeMap[s]=ci%PALETTE.length;ci++;}});
+  const byStore = {};
+  Object.keys(storeMap).forEach(s=>{byStore[s]=[];});
+  records.forEach(r=>{const s=(r.loja||'').trim()||'Sem loja'; byStore[s].push(r);});
+
+  const bp = records.length ? records.reduce((a,b)=>a.valor<b.valor?a:b) : null;
+  const lastRecord = records.length ? records[records.length-1] : null;
+
+  const datasets = Object.keys(storeMap).map(store=>{
+    const sr = byStore[store]||[];
+    const pal = PALETTE[storeMap[store]];
+    const sp = [];
+    sr.forEach((r,i)=>{
+      sp.push({x:new Date(r.data),y:r.valor,id:r.id});
+      if(i<sr.length-1) sp.push({x:new Date(sr[i+1].data),y:r.valor,id:null});
+    });
+    return {
+      label: store,
+      data: sp.map(p=>({x:p.x,y:p.y})),
+      borderColor: pal.border, backgroundColor: pal.bg,
+      tension:0, fill:false, spanGaps:false,
+      pointBackgroundColor: sp.map(p=>{
+        if(!p.id) return 'transparent';
+        if(bp&&p.id===bp.id) return '#2E7D32';
+        if(lastRecord&&p.id===lastRecord.id) return '#E65100';
+        return pal.dot;
+      }),
+      pointBorderColor: sp.map(p=>p.id?'#fff':'transparent'),
+      pointBorderWidth:2, pointRadius:sp.map(p=>p.id?5:0),
+    };
+  });
+
+  // Annotations for best/current
+  window._detailChart = new Chart(ctx.getContext('2d'), {
+    type:'line', data:{datasets},
+    options:{
+      responsive:true, maintainAspectRatio:true,
+      plugins:{
+        legend:{display:Object.keys(storeMap).length>1,position:'top',labels:{font:{family:'DM Sans',size:10},boxWidth:10}},
+        tooltip:{callbacks:{
+          title: its => new Date(its[0].parsed.x).toLocaleDateString('pt-BR'),
+          label: it => ` ${fmtBRL(it.parsed.y)}`
+        }}
+      },
+      scales:{
+        x:{type:'time',min:cutoff,max:now,
+          time:{unit:'day',displayFormats:{day:'dd/MM',hour:'dd/MM HH:mm'}},
+          ticks:{font:{family:'DM Sans',size:9},maxRotation:0}},
+        y:{beginAtZero:false,ticks:{callback:v=>`R$${v}`,font:{family:'DM Sans',size:9}}}
+      }
+    }
+  });
+}
+
+function closeItemDetail() {
+  document.getElementById('item-detail-modal').classList.remove('open');
+  if (window._detailChart) { window._detailChart.destroy(); window._detailChart = null; }
+  detailCtx = null;
+}
+
+/* ═══════════════════════════════════════════════
+   EDIT ITEM MODAL
+═══════════════════════════════════════════════ */
+let editItemCtx = null; // { key, originalName }
+
+function openEditItem(key, itemName) {
+  const item = roomItems(key).find(i => i.item === itemName);
+  if (!item) return;
+  editItemCtx = { key, originalName: itemName };
+
+  document.getElementById('edit-item-title').textContent = itemName;
+  document.getElementById('edit-item-room-label').textContent = ROOM_META[key]?.label || key;
+  document.getElementById('ei-item').value        = item.item || '';
+  document.getElementById('ei-necessidade').value = item.necessidade || '';
+  document.getElementById('ei-qtd').value         = item.qtd || 1;
+  document.getElementById('ei-modelo').value      = item.modelo || '';
+  document.getElementById('ei-prioridade').value  = item.prioridade || '';
+  document.getElementById('ei-estimado').value    = parseNum(item.estimado) || '';
+  document.getElementById('ei-pago').value        = parseNum(item.pago) || '';
+  document.getElementById('ei-presente').value    = item.presente || '';
+  document.getElementById('ei-bought').value      = item.bought ? 'true' : 'false';
+  document.getElementById('edit-item-status').textContent = '';
+  document.getElementById('edit-item-modal').classList.add('open');
+}
+
+function closeEditItem() {
+  document.getElementById('edit-item-modal').classList.remove('open');
+  editItemCtx = null;
+}
+
+async function saveEditItem() {
+  if (!editItemCtx) return;
+  const { key, originalName } = editItemCtx;
+  const status = document.getElementById('edit-item-status');
+
+  const fields = {
+    item:        document.getElementById('ei-item').value.trim(),
+    necessidade: document.getElementById('ei-necessidade').value,
+    qtd:         parseInt(document.getElementById('ei-qtd').value) || 1,
+    modelo:      document.getElementById('ei-modelo').value.trim(),
+    prioridade:  document.getElementById('ei-prioridade').value,
+    estimado:    parseFloat(document.getElementById('ei-estimado').value) || null,
+    pago:        parseFloat(document.getElementById('ei-pago').value) || null,
+    presente:    document.getElementById('ei-presente').value,
+    bought:      document.getElementById('ei-bought').value === 'true',
+  };
+
+  if (!fields.item) { status.style.color='#C62828'; status.textContent='Nome não pode ser vazio.'; return; }
+  status.style.color='var(--mid)'; status.textContent='Salvando…';
+
+  try {
+    const res = await apiFetch({
+      action:       'updateItem',
+      room:         key,
+      originalName,
+      ...fields,
+    });
+    if (res.error) throw new Error(res.error);
+
+    // Update local state
+    const item = roomItems(key).find(i => i.item === originalName);
+    if (item) Object.assign(item, fields);
+
+    status.style.color='var(--sage-dark)'; status.textContent='✅ Salvo!';
+    setTimeout(() => {
+      closeEditItem();
+      renderRoom(key);
+      if (activeRoom === 'overview') renderOverview();
+    }, 600);
+  } catch(e) {
+    status.style.color='#C62828'; status.textContent='Erro: ' + e.message;
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   TOGGLE BOUGHT (checkbox interativo)
+═══════════════════════════════════════════════ */
+async function toggleBought(key, itemName, el) {
+  const item = roomItems(key).find(i => i.item === itemName);
+  if (!item) return;
+  el.classList.add('saving');
+  const newVal = !item.bought;
+
+  try {
+    const res = await apiFetch({
+      action: 'updateItem',
+      room:   key,
+      originalName: itemName,
+      bought: newVal,
+      // pass remaining fields unchanged
+      item:        item.item,
+      necessidade: item.necessidade || '',
+      qtd:         item.qtd || 1,
+      modelo:      item.modelo || '',
+      prioridade:  item.prioridade || '',
+      estimado:    parseNum(item.estimado) || '',
+      pago:        parseNum(item.pago) || '',
+      presente:    item.presente || '',
+    });
+    if (res.error) throw new Error(res.error);
+    item.bought = newVal;
+    renderRoom(key);
+    if (activeRoom === 'overview') renderOverview();
+  } catch(e) {
+    el.classList.remove('saving');
+    alert('Erro ao salvar: ' + e.message);
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   CAIXINHA MODAL
+═══════════════════════════════════════════════ */
+function openModal() {
+  document.getElementById('cx-reservado').value = STATE.config.reservado || 0;
+  document.getElementById('cx-meta-mensal').value = STATE.config.metaMensal || 0;
+  document.getElementById('cx-modal').classList.add('open');
+}
+function closeModal() { document.getElementById('cx-modal').classList.remove('open'); }
+
+async function saveCaixinha() {
+  const reservado  = parseFloat(document.getElementById('cx-reservado').value) || 0;
+  const metaMensal = parseFloat(document.getElementById('cx-meta-mensal').value) || 0;
+  try {
+    const res = await apiFetch({ action:'updateConfig', reservado, metaMensal });
+    if (res.error) throw new Error(res.error);
+    STATE.config.reservado = reservado;
+    STATE.config.metaMensal = metaMensal;
+    closeModal();
+    renderOverview();
+  } catch(e) {
+    alert('Erro ao salvar: ' + e.message);
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   TAB SWITCHING
+═══════════════════════════════════════════════ */
+function switchTab(room, btn) {
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(`tab-${room}`).classList.add('active');
+  btn.classList.add('active');
+  activeRoom = room;
+
+  if (room === 'overview') {
+    renderOverview();
+  } else if (STATE.loaded.has(room)) {
+    renderRoom(room);
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   BOOT
+═══════════════════════════════════════════════ */
+init();
+</script>
+</body>
+</html>

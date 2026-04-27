@@ -407,6 +407,93 @@ tbody td{padding:11px 14px;font-size:.83rem;vertical-align:middle}
   transition: color .15s;
 }
 .item-row-name:hover { color: var(--sage); }
+
+/* ── ITEM DETAIL IMAGE COVER ──────────────── */
+.detail-cover {
+  width: 100%;
+  height: 220px;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 20px;
+  background: var(--cream);
+  position: relative;
+  cursor: zoom-in;
+}
+.detail-cover img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  transition: transform .3s ease;
+  display: block;
+}
+.detail-cover:hover img { transform: scale(1.03); }
+.detail-cover-expand {
+  position: absolute;
+  bottom: 10px; right: 10px;
+  background: rgba(0,0,0,.45);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: .72rem;
+  font-weight: 600;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  letter-spacing: .04em;
+  transition: background .2s;
+}
+.detail-cover-expand:hover { background: rgba(0,0,0,.7); }
+.detail-cover-placeholder {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 8px;
+  color: var(--light);
+}
+.detail-cover-placeholder span { font-size: 2.5rem; }
+.detail-cover-placeholder small { font-size: .72rem; }
+
+/* ── LIGHTBOX ─────────────────────────────── */
+#lightbox {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.88);
+  z-index: 9999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  cursor: zoom-out;
+  animation: fadeIn .2s ease;
+}
+#lightbox.open { display: flex; }
+#lightbox img {
+  max-width: 92vw;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.5);
+}
+#lightbox-close {
+  position: fixed;
+  top: 20px; right: 24px;
+  background: rgba(255,255,255,.15);
+  border: none; border-radius: 50%;
+  width: 40px; height: 40px;
+  color: white; font-size: 1.2rem;
+  cursor: pointer; display: flex;
+  align-items: center; justify-content: center;
+  transition: background .2s;
+}
+#lightbox-close:hover { background: rgba(255,255,255,.3); }
+#lightbox-caption {
+  position: fixed;
+  bottom: 24px; left: 50%;
+  transform: translateX(-50%);
+  color: rgba(255,255,255,.7);
+  font-size: .82rem;
+  background: rgba(0,0,0,.4);
+  padding: 6px 16px;
+  border-radius: 100px;
+  backdrop-filter: blur(4px);
+  white-space: nowrap;
+}
 </style>
 </head>
 <body>
@@ -515,6 +602,13 @@ tbody td{padding:11px 14px;font-size:.83rem;vertical-align:middle}
       <button class="btn-save-edit" onclick="saveEditItem()">Salvar na Planilha</button>
     </div>
   </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div id="lightbox" onclick="closeLightbox()">
+  <button id="lightbox-close" onclick="closeLightbox()">✕</button>
+  <img id="lightbox-img" src="" alt="">
+  <div id="lightbox-caption"></div>
 </div>
 <!-- EDIT PRICE MODAL -->
 <div class="modal-overlay" id="edit-price-modal">
@@ -1779,6 +1873,29 @@ async function confirmDeletePrice(key, recordId) {
 }
 
 
+
+/* ═══════════════════════════════════════════════
+   LIGHTBOX
+═══════════════════════════════════════════════ */
+function openLightbox(src, caption) {
+  document.getElementById('lightbox-img').src = src;
+  document.getElementById('lightbox-caption').textContent = caption || '';
+  document.getElementById('lightbox').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+  document.body.style.overflow = '';
+}
+// Close lightbox with Escape key
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeLightbox();
+    closeItemDetail();
+    closeEditItem();
+    closeEditModal();
+  }
+});
 /* ═══════════════════════════════════════════════
    ITEM DETAIL MODAL
 ═══════════════════════════════════════════════ */
@@ -1802,6 +1919,12 @@ function openItemDetail(key, itemName) {
   const pc = `pb-${(item.prioridade||'P3')[1]}`;
 
   document.getElementById('item-detail-body').innerHTML = `
+    ${item.imgUrl ? `
+    <div class="detail-cover" onclick="openLightbox('${item.imgUrl}','${item.item}')">
+      <img src="${item.imgUrl}" alt="${item.item}" onerror="this.parentElement.innerHTML='<div class=\"detail-cover-placeholder\"><span>🖼️</span><small>Imagem indisponível</small></div>'">
+      <button class="detail-cover-expand" onclick="event.stopPropagation();openLightbox('${item.imgUrl}','${item.item}')">⤢ Expandir</button>
+    </div>` : ''}
+
     <div class="item-detail-header">
       <div>
         <div class="item-detail-title">${item.item}</div>

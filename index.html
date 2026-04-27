@@ -422,6 +422,17 @@ tbody td{padding:11px 14px;font-size:.83rem;vertical-align:middle}
     <button class="setup-btn" onclick="saveConfig()">Entrar no Dashboard</button>
     <div class="setup-error" id="setup-error">URL ou chave inválida. Verifique e tente novamente.</div>
     <div class="setup-hint">Estas informações ficam salvas apenas no seu navegador.<br>Ninguém mais que acesse este link verá seus dados.</div>
+    <script>
+      // Allow pressing Enter to submit
+      document.addEventListener('DOMContentLoaded', function() {
+        ['setup-url','setup-key'].forEach(function(id) {
+          var el = document.getElementById(id);
+          if (el) el.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') saveConfig();
+          });
+        });
+      });
+    </script>
   </div>
 </div>
 
@@ -669,9 +680,24 @@ const ROOM_META = {
 /* ═══════════════════════════════════════════════
    SETUP & AUTH
 ═══════════════════════════════════════════════ */
+// Storage helpers — graceful fallback if localStorage is blocked
+function storageSave(k, v) {
+  try { localStorage.setItem(k, v); } catch(e) {}
+  try { sessionStorage.setItem(k, v); } catch(e) {}
+}
+function storageGet(k) {
+  try { const v = localStorage.getItem(k); if (v) return v; } catch(e) {}
+  try { const v = sessionStorage.getItem(k); if (v) return v; } catch(e) {}
+  return null;
+}
+function storageClear(k) {
+  try { localStorage.removeItem(k); } catch(e) {}
+  try { sessionStorage.removeItem(k); } catch(e) {}
+}
+
 function init() {
-  const url = localStorage.getItem('enx_url');
-  const key = localStorage.getItem('enx_key');
+  const url = storageGet('enx_url');
+  const key = storageGet('enx_key');
   if (url && key) {
     API_URL = url;
     API_KEY = key;
@@ -682,25 +708,46 @@ function init() {
 }
 
 function saveConfig() {
-  const url = document.getElementById('setup-url').value.trim();
-  const key = document.getElementById('setup-key').value.trim();
+  const urlEl  = document.getElementById('setup-url');
+  const keyEl  = document.getElementById('setup-key');
+  const errEl  = document.getElementById('setup-error');
+  const btnEl  = document.querySelector('.setup-btn');
+  const url    = urlEl.value.trim();
+  const key    = keyEl.value.trim();
+
+  errEl.style.display = 'none';
+
   if (!url || !key) {
-    document.getElementById('setup-error').style.display = 'block';
-    document.getElementById('setup-error').textContent = 'Preencha a URL e a chave de acesso.';
+    errEl.style.display = 'block';
+    errEl.textContent = 'Preencha a URL e a chave de acesso.';
     return;
   }
+  if (!url.startsWith('https://script.google.com')) {
+    errEl.style.display = 'block';
+    errEl.textContent = 'URL inválida. Deve começar com https://script.google.com/…';
+    return;
+  }
+
+  // Visual feedback while loading
+  btnEl.textContent = 'Conectando…';
+  btnEl.disabled = true;
+
   API_URL = url;
   API_KEY = key;
-  localStorage.setItem('enx_url', url);
-  localStorage.setItem('enx_key', key);
+  storageSave('enx_url', url);
+  storageSave('enx_key', key);
+
   document.getElementById('setup-screen').style.display = 'none';
   showApp();
-  loadAllData();
+  loadAllData().finally(() => {
+    btnEl.textContent = 'Entrar no Dashboard';
+    btnEl.disabled = false;
+  });
 }
 
 function logout() {
-  localStorage.removeItem('enx_url');
-  localStorage.removeItem('enx_key');
+  storageClear('enx_url');
+  storageClear('enx_key');
   location.reload();
 }
 
@@ -1702,14 +1749,14 @@ function openItemDetail(key, itemName) {
         <label>Modelo Escolhido</label>
         <div class="field-val">${item.modelo||'—'}</div>
       </div>
-      \${item.presente ? `
+      ${item.presente ? `
       <div class="item-detail-field" style="grid-column:span 2;background:#F8F4FC;border-radius:8px;padding:10px 14px;margin-top:4px">
         <label>🎁 Presente de</label>
-        <div class="field-val">\${item.presenteDe || '<span style=\"color:var(--mid);font-style:italic\">Não informado</span>'}</div>
+        <div class="field-val">${item.presenteDe || '<span style="color:var(--mid);font-style:italic">Não informado</span>'}</div>
       </div>` : ''}
     </div>
 
-    \${(item.historico||[]).length ? `
+    ${(item.historico||[]).length ? `
     <div class="item-detail-chart">
       <h4>Histórico de Preços</h4>
       ${(currentRecord||bp) ? `

@@ -458,6 +458,13 @@ tbody td{padding:11px 14px;font-size:.83rem;vertical-align:middle}
       </div>
       <div class="form-group"><label>Quantidade</label><input id="ei-qtd" type="number" min="1"></div>
       <div class="form-group span2"><label>Modelo Escolhido</label><input id="ei-modelo" type="text" placeholder="Nome do modelo…"></div>
+      <div class="form-group span2">
+        <label>URL da Imagem (opcional)</label>
+        <input id="ei-imgUrl" type="url" placeholder="https://…">
+        <div id="ei-img-preview" style="margin-top:8px;display:none">
+          <img id="ei-img-tag" style="max-height:80px;border-radius:8px;border:1px solid var(--light)" src="" alt="preview">
+        </div>
+      </div>
       <div class="form-group"><label>Prioridade</label>
         <select id="ei-prioridade">
           <option value="">—</option>
@@ -471,11 +478,15 @@ tbody td{padding:11px 14px;font-size:.83rem;vertical-align:middle}
       <div class="form-group"><label>Valor Estimado (R$)</label><input id="ei-estimado" type="number" step="0.01"></div>
       <div class="form-group"><label>Valor Pago (R$)</label><input id="ei-pago" type="number" step="0.01"></div>
       <div class="form-group"><label>Presente</label>
-        <select id="ei-presente">
+        <select id="ei-presente" onchange="togglePresenteDe(this.value)">
           <option value="">Não</option>
           <option value="Recebido">Recebido</option>
           <option value="Prometido">Prometido</option>
         </select>
+      </div>
+      <div class="form-group" id="ei-presenteDe-wrap">
+        <label>Quem deu / vai dar</label>
+        <input id="ei-presenteDe" type="text" placeholder="Ex: Vó Maria, Tia Ana…">
       </div>
       <div class="form-group"><label>Comprado</label>
         <select id="ei-bought">
@@ -763,10 +774,44 @@ function roomItems(key) {
 }
 
 function itemCost(i) {
+  // Custo efetivo do item (exclui presentes do desembolso)
   if (i.presente === 'Recebido' || i.presente === 'Prometido') return 0;
   const pago = parseNum(i.pago);
   const est  = parseNum(i.estimado);
   return pago ?? est ?? 0;
+}
+
+function calcProgress(items) {
+  // Progresso financeiro real:
+  // Numerador   = valor pago (itens comprados) + valor estimado de presentes (já "resolvidos")
+  // Denominador = soma dos valores de todos os itens QUE TÊM valor (estimado ou pago)
+  // Itens sem nenhum valor são ignorados.
+  let numerator   = 0;
+  let denominator = 0;
+
+  items.forEach(i => {
+    const pago = parseNum(i.pago);
+    const est  = parseNum(i.estimado);
+    const isGift = i.presente === 'Recebido' || i.presente === 'Prometido';
+
+    // Valor de referência do item (o melhor número disponível)
+    const refVal = pago ?? est ?? null;
+    if (refVal === null) return; // sem valor → ignorar
+
+    denominator += refVal;
+
+    if (isGift) {
+      numerator += refVal;   // presente conta como já resolvido no progresso
+    } else if (i.bought && pago !== null) {
+      numerator += pago;     // comprado: usa valor pago real
+    } else if (i.bought && est !== null) {
+      numerator += est;      // comprado mas sem pago: usa estimado
+    }
+    // pendente sem presente: não soma no numerador
+  });
+
+  const pct = denominator > 0 ? Math.min(100, Math.round(numerator / denominator * 100)) : 0;
+  return { numerator, denominator, pct };
 }
 
 function bestPrice(i) {
@@ -808,20 +853,20 @@ function renderOverview() {
   const total = items.length;
   const bought = items.filter(i => i.bought).length;
   const giftCount = items.filter(i => i.presente).length;
-  const pctItems = total > 0 ? Math.round(bought / total * 100) : 0;
+  const prog = calcProgress(items);
 
   document.getElementById('kpi-overview').innerHTML = `
     <div class="kpi-card t"><div class="kpi-label">Total Investido</div><div class="kpi-value">${fmtK(totalGasto)}</div><div class="kpi-sub">${bought} itens comprados</div></div>
     <div class="kpi-card"><div class="kpi-label">Estimado Restante</div><div class="kpi-value">${fmtK(falta)}</div><div class="kpi-sub">para completar o enxoval</div></div>
     <div class="kpi-card g"><div class="kpi-label">Objetivo Total</div><div class="kpi-value">${fmtK(objetivo)}</div><div class="kpi-sub">calculado de todos os itens</div></div>
-    <div class="kpi-card d"><div class="kpi-label">Progresso</div><div class="kpi-value">${pctItems}%</div><div class="kpi-sub">${bought} de ${total} itens</div></div>
+    <div class="kpi-card d"><div class="kpi-label">Progresso</div><div class="kpi-value">${prog.pct}%</div><div class="kpi-sub">baseado em valor (${fmtK(prog.numerator)} de ${fmtK(prog.denominator)})</div></div>
     <div class="kpi-card gift"><div class="kpi-label">🎁 Presentes</div><div class="kpi-value">${giftCount}</div><div class="kpi-sub">itens recebidos/prometidos</div></div>
     ${mesesFalta ? `<div class="kpi-card"><div class="kpi-label">⏱ Estimativa</div><div class="kpi-value">${mesesFalta}</div><div class="kpi-sub">meses para atingir objetivo</div></div>` : ''}
   `;
 
-  // Progress bar
-  document.getElementById('pct-overview').textContent = pctItems + '%';
-  setTimeout(() => { document.getElementById('bar-overview').style.width = pctItems + '%'; }, 150);
+  // Progress bar — value-based
+  document.getElementById('pct-overview').textContent = prog.pct + '%';
+  setTimeout(() => { document.getElementById('bar-overview').style.width = prog.pct + '%'; }, 150);
 
   // Charts
   renderOverviewCharts(items);
@@ -935,7 +980,8 @@ function renderRoom(key) {
   const total    = items.length;
   const bought   = items.filter(i=>i.bought).length;
   const giftC    = items.filter(i=>i.presente).length;
-  const pct      = total > 0 ? Math.round(bought/total*100) : 0;
+  const prog     = calcProgress(items);
+  const pct      = prog.pct;
   const totalEst = items.reduce((s,i)=>s+itemCost(i),0);
   const totalPago= items.reduce((s,i)=>s+(i.pago||0),0);
 
@@ -958,6 +1004,9 @@ function renderRoom(key) {
         <span class="progress-pct" id="pct-${key}">${pct}%</span>
       </div>
       <div class="progress-bar-bg"><div class="progress-bar-fill" id="bar-${key}" style="width:0%"></div></div>
+      <div class="progress-legend" style="margin-top:8px">
+        <span style="font-size:.72rem;color:var(--mid)">Baseado em valor — ${fmtK(prog.numerator)} de ${fmtK(prog.denominator)} contabilizados</span>
+      </div>
     </div>
 
     <!-- Mini stats -->
@@ -1113,7 +1162,10 @@ function renderRoomTable(key, items, filter, search) {
         </span>
       </td>
       <td>
-        <span class="item-row-name" onclick="openItemDetail('${key}','${safeItem}')">${i.item}</span>
+        <div class="img-wrap">
+          <span class="item-row-name" onclick="openItemDetail('${key}','${safeItem}')">${i.item}</span>
+          ${i.imgUrl ? `<img class="float-img" src="${i.imgUrl}" alt="${i.item}" onerror="this.style.display='none'">` : ''}
+        </div>
         ${i.modelo?`<div style="font-size:.7rem;color:var(--mid);margin-top:2px">${i.modelo}</div>`:''}
       </td>
       <td>${i.necessidade?`<span class="need-badge ${nc}">${i.necessidade}</span>`:''}</td>
@@ -1650,9 +1702,14 @@ function openItemDetail(key, itemName) {
         <label>Modelo Escolhido</label>
         <div class="field-val">${item.modelo||'—'}</div>
       </div>
+      \${item.presente ? `
+      <div class="item-detail-field" style="grid-column:span 2;background:#F8F4FC;border-radius:8px;padding:10px 14px;margin-top:4px">
+        <label>🎁 Presente de</label>
+        <div class="field-val">\${item.presenteDe || '<span style=\"color:var(--mid);font-style:italic\">Não informado</span>'}</div>
+      </div>` : ''}
     </div>
 
-    ${(item.historico||[]).length ? `
+    \${(item.historico||[]).length ? `
     <div class="item-detail-chart">
       <h4>Histórico de Preços</h4>
       ${(currentRecord||bp) ? `
@@ -1774,8 +1831,29 @@ function openEditItem(key, itemName) {
   document.getElementById('ei-pago').value        = parseNum(item.pago) || '';
   document.getElementById('ei-presente').value    = item.presente || '';
   document.getElementById('ei-bought').value      = item.bought ? 'true' : 'false';
+  document.getElementById('ei-presenteDe').value  = item.presenteDe || '';
+  togglePresenteDe(item.presente || '');
+  document.getElementById('ei-imgUrl').value       = item.imgUrl || '';
   document.getElementById('edit-item-status').textContent = '';
+  // Show preview if existing image
+  const prevWrap = document.getElementById('ei-img-preview');
+  const prevImg  = document.getElementById('ei-img-tag');
+  if (item.imgUrl) {
+    prevImg.src = item.imgUrl;
+    prevWrap.style.display = 'block';
+  } else {
+    prevWrap.style.display = 'none';
+  }
+  document.getElementById('ei-imgUrl').oninput = function() {
+    if (this.value) { prevImg.src = this.value; prevWrap.style.display = 'block'; }
+    else { prevWrap.style.display = 'none'; }
+  };
   document.getElementById('edit-item-modal').classList.add('open');
+}
+
+function togglePresenteDe(val) {
+  const wrap = document.getElementById('ei-presenteDe-wrap');
+  if (wrap) wrap.style.display = val ? 'block' : 'none';
 }
 
 function closeEditItem() {
@@ -1793,10 +1871,12 @@ async function saveEditItem() {
     necessidade: document.getElementById('ei-necessidade').value,
     qtd:         parseInt(document.getElementById('ei-qtd').value) || 1,
     modelo:      document.getElementById('ei-modelo').value.trim(),
+    imgUrl:      document.getElementById('ei-imgUrl').value.trim(),
     prioridade:  document.getElementById('ei-prioridade').value,
     estimado:    parseFloat(document.getElementById('ei-estimado').value) || null,
     pago:        parseFloat(document.getElementById('ei-pago').value) || null,
     presente:    document.getElementById('ei-presente').value,
+    presenteDe:  document.getElementById('ei-presenteDe').value.trim(),
     bought:      document.getElementById('ei-bought').value === 'true',
   };
 
@@ -1851,6 +1931,7 @@ async function toggleBought(key, itemName, el) {
       estimado:    parseNum(item.estimado) || '',
       pago:        parseNum(item.pago) || '',
       presente:    item.presente || '',
+      presenteDe:  item.presenteDe || '',
     });
     if (res.error) throw new Error(res.error);
     item.bought = newVal;

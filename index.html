@@ -420,6 +420,9 @@ tbody td{padding:11px 14px;font-size:.83rem;vertical-align:middle}
     <input class="setup-input" id="setup-url" placeholder="URL do Apps Script (https://script.google.com/...)" type="url">
     <input class="setup-input" id="setup-key" placeholder="Chave de acesso (API Key)" type="password">
     <button class="setup-btn" onclick="saveConfig()">Entrar no Dashboard</button>
+    <button class="setup-btn" onclick="testConnection()" style="margin-top:8px;background:transparent;border:1.5px solid var(--light);color:var(--mid);font-size:.8rem;padding:10px">
+      🔍 Testar conexão
+    </button>
     <div class="setup-error" id="setup-error">URL ou chave inválida. Verifique e tente novamente.</div>
     <div class="setup-hint">Estas informações ficam salvas apenas no seu navegador.<br>Ninguém mais que acesse este link verá seus dados.</div>
     <script>
@@ -751,6 +754,75 @@ function logout() {
   location.reload();
 }
 
+async function testConnection() {
+  const url = document.getElementById('setup-url').value.trim();
+  const key = document.getElementById('setup-key').value.trim();
+  const errEl = document.getElementById('setup-error');
+  errEl.style.display = 'none';
+
+  if (!url || !key) {
+    errEl.style.display = 'block';
+    errEl.style.color = '#C62828';
+    errEl.textContent = 'Preencha a URL e a chave antes de testar.';
+    return;
+  }
+
+  errEl.style.display = 'block';
+  errEl.style.color = 'var(--mid)';
+  errEl.textContent = '⏳ Testando conexão…';
+
+  try {
+    const testUrl = new URL(url);
+    testUrl.searchParams.set('key', key);
+    testUrl.searchParams.set('action', 'config');
+    const res = await fetch(testUrl.toString(), {
+      redirect: 'follow',
+      headers: { 'Accept': 'application/json' },
+    });
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); } catch(e) {
+      throw new Error('Resposta não é JSON. Verifique se a URL termina em /exec e não em /dev.');
+    }
+    if (data.error === 'Chave de acesso inválida.') {
+      errEl.style.color = '#C62828';
+      errEl.textContent = '❌ Chave incorreta. Verifique o API_KEY no Apps Script.';
+    } else if (data.error) {
+      errEl.style.color = '#C62828';
+      errEl.textContent = '❌ Erro do servidor: ' + data.error;
+    } else {
+      errEl.style.color = '#2E7D32';
+      errEl.textContent = '✅ Conexão OK! Clique em "Entrar no Dashboard".';
+    }
+  } catch(e) {
+    errEl.style.color = '#C62828';
+    if (e.message.includes('Failed to fetch') || e.message.includes('NetworkError')) {
+      errEl.textContent = '❌ CORS bloqueado. Veja as instruções abaixo.';
+      showCorsHelp();
+    } else {
+      errEl.textContent = '❌ ' + e.message;
+    }
+  }
+}
+
+function showCorsHelp() {
+  const hint = document.querySelector('.setup-hint');
+  hint.innerHTML = `
+    <strong style="color:#C62828">⚠️ Erro de CORS — siga estes passos:</strong><br><br>
+    1. Abra o Apps Script → <strong>Implantar → Gerenciar implantações</strong><br>
+    2. Clique no lápis ✏️ para editar a implantação ativa<br>
+    3. Em <strong>"Executar como"</strong> → selecione <strong>Eu mesmo</strong><br>
+    4. Em <strong>"Quem tem acesso"</strong> → selecione <strong>Qualquer pessoa</strong><br>
+    5. Clique em <strong>Implantar</strong> e copie a nova URL<br>
+    6. A URL deve terminar em <code>/exec</code>, não <code>/dev</code>
+  `;
+  hint.style.background = '#FFF5F5';
+  hint.style.padding = '12px';
+  hint.style.borderRadius = '8px';
+  hint.style.textAlign = 'left';
+  hint.style.lineHeight = '1.8';
+}
+
 function showApp() {
   document.getElementById('app-header').style.display = 'flex';
   document.getElementById('tab-bar').style.display = 'flex';
@@ -763,10 +835,21 @@ function showApp() {
 async function apiFetch(params) {
   const url = new URL(API_URL);
   url.searchParams.set('key', API_KEY);
-  for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
-  const res = await fetch(url.toString());
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== null && v !== undefined) url.searchParams.set(k, v);
+  }
+  const res = await fetch(url.toString(), {
+    redirect: 'follow',
+    headers: { 'Accept': 'application/json' },
+  });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
+  const text = await res.text();
+  try {
+    return JSON.parse(text);
+  } catch(e) {
+    console.error('Response was not JSON:', text.slice(0, 300));
+    throw new Error('Resposta inválida do servidor. Verifique a URL do Apps Script.');
+  }
 }
 
 async function apiPost(body) {

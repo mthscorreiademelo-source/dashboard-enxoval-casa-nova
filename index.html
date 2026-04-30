@@ -1307,7 +1307,13 @@ function renderRoom(key) {
         <div class="price-hist-card">
           <h3>Histórico de Preços</h3>
           <div class="form-group"><label>Selecionar Item</label>
-            <select id="hsel-${key}" onchange="renderPriceChart('${key}')">${items.filter(i=>i.item).map(i=>`<option value="${i.item}">${i.item}</option>`).join('')}</select>
+            <select id="hsel-${key}" onchange="renderPriceChart('${key}')">
+              ${(() => {
+                const withHistory = items.filter(i => i.item && i.historico && i.historico.length > 0);
+                if (!withHistory.length) return '<option disabled value="">Nenhum item com histórico ainda</option>';
+                return withHistory.map(i => `<option value="${i.item}">${i.item} (${i.historico.length} registro${i.historico.length > 1 ? 's' : ''})</option>`).join('');
+              })()}
+            </select>
           </div>
           <div class="period-selector" id="period-sel-${key}">
             <button class="period-btn" onclick="setPeriod('${key}', 7, this)">7 dias</button>
